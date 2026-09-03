@@ -1,0 +1,285 @@
+.featured {
+  margin: 24px 20px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.featured-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.featured-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: black;
+}
+
+.more-btn {
+  border: none;
+  background: none;
+  color: #7a4dff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.contest-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.contest-image {
+  width: 100%;
+  max-width: 100%;
+  height: 220px;
+  display: block;
+  object-fit: cover;
+}
+
+.contest-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.75) 0%,
+    rgba(0, 0, 0, 0.35) 45%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  color: white;
+}
+
+.contest-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: #7a4dff;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.contest-overlay h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.contest-overlay p {
+  margin: 8px 0 18px;
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.95;
+}
+
+.contest-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.join-btn,
+.contest-modal-action {
+  border: none;
+  background: #7a4dff;
+  color: white;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.join-btn {
+  padding: 10px 18px;
+}
+
+.join-btn:hover,
+.contest-modal-action:hover {
+  background: #6a3eff;
+}
+
+.featured .swiper {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.swiper-pagination {
+  position: static !important;
+  margin-top: 8px;
+}
+
+.swiper-pagination-bullet {
+  width: 8px;
+  height: 8px;
+  background: #d0d0d0;
+  opacity: 1;
+}
+
+.swiper-pagination-bullet-active {
+  width: 22px;
+  border-radius: 999px;
+  background: #7a4dff;
+}
+
+.contest-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.contest-modal {
+  position: relative;
+  width: min(100%, 420px);
+  padding: 24px;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+}
+
+.contest-list-modal {
+  max-height: min(80vh, 620px);
+  overflow-y: auto;
+}
+
+.contest-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  border: none;
+  background: transparent;
+  color: #777;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.contest-modal h3 {
+  margin: 18px 0 8px;
+  font-size: 22px;
+}
+
+.contest-modal p {
+  margin: 0 0 18px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.contest-modal-info {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  color: #666;
+  font-size: 13px;
+}
+
+.contest-modal-action {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.contest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.contest-list-item {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 16px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.contest-list-item:hover {
+  background: #faf8ff;
+  border-color: #d9ccff;
+}
+
+.contest-list-item img {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.contest-list-item span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.contest-list-item strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contest-list-item small {
+  color: #888;
+  font-size: 11px;
+}
+
+.contest-list-item b {
+  color: #7a4dff;
+  font-size: 24px;
+}
+
+.contest-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  text-align: left;
+}
+.contest-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.contest-badge b {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.18);
+  font-size: 9px;
+}
+.contest-empty {
+  padding: 22px 14px;
+  border: 1px dashed #ddd8e7;
+  border-radius: 16px;
+  background: #fff;
+  color: #888;
+  font-size: 11px;
+  text-align: center;
+}

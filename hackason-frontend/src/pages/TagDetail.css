@@ -1,0 +1,139 @@
+ :root {
+  --sm-primary: #7a4dff;
+  --sm-primary-soft: #f0ebff;
+  --sm-bg: #faf9f7;
+  --sm-subtext: #777;
+  --sm-border: #e9e7ed;
+  --sm-r20: 20px;
+  --sm-shadow-card: 0 6px 20px rgba(40, 28, 80, 0.06);
+}
+
+.tag-detail-page {
+  min-height: 100vh;
+  padding: 18px 20px 100px;
+  background: var(--sm-bg);
+}
+
+.tag-detail-header {
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.tag-detail-header button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 32px;
+  cursor: pointer;
+}
+
+.tag-detail-header h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 24px;
+}
+
+.tag-detail-header p {
+  margin: 4px 0 0;
+  color: var(--sm-subtext);
+  text-align: center;
+  font-size: 11px;
+}
+
+.tag-detail-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--sm-border);
+  border-radius: var(--sm-r20);
+  background: #fff;
+  box-shadow: var(--sm-shadow-card);
+}
+
+.tag-detail-summary div {
+  display: flex;
+  flex-direction: column;
+}
+
+.tag-detail-summary span {
+  color: var(--sm-subtext);
+  font-size: 10px;
+}
+
+.tag-detail-summary strong {
+  margin-top: 4px;
+  color: var(--sm-primary);
+  font-size: 16px;
+}
+
+.tag-detail-summary > button {
+  grid-column: 1 / -1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--sm-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tag-detail-error {
+  margin: 10px 0 0;
+  color: #c55363;
+  font-size: 11px;
+}
+
+.tag-detail-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 18px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #eeeaf6;
+}
+
+.tag-detail-tab {
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sm-subtext);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tag-detail-tab.active {
+  background: #fff;
+  color: var(--sm-primary);
+  box-shadow: 0 2px 8px rgba(40, 28, 80, 0.08);
+}
+
+.tag-posts {
+  margin-top: 18px;
+}
+
+.contest-empty {
+  padding: 24px 16px;
+  border: 1px dashed #ddd8e7;
+  border-radius: 16px;
+  background: #fff;
+  color: #888;
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 430px) {
+  .tag-detail-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
