@@ -11,7 +11,7 @@ const router = express.Router();
 
 
 
-router.get("/",　async (req, res) => {
+router.get("/", async (req, res) => {
     const { sort } = req.query;
 
     const {data, error} = await supabase

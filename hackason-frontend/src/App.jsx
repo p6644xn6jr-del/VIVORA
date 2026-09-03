@@ -6,11 +6,14 @@ import Discover from "./pages/Discover";
 import Contest from "./pages/Contest";
 import ContestDetail from "./pages/ContestDetail";
 import ContestPosts from "./pages/ContestPosts";
+import JoinedContests from "./pages/JoinedContests";
 import Post from "./pages/Post";
+import PostDetail from "./pages/PostDetail";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import TagDetail from "./pages/TagDetail";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import BottomNavigation from "./components/BottomNavigation";
 
 function App() {
@@ -19,18 +22,22 @@ function App() {
       <div className="app">
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/" element={<Home />} />
           <Route path="/discover" element={<Discover />} />
 
           <Route path="/tags/:tag" element={<TagDetail />} />
 
           <Route path="/contests" element={<Contest />} />
+          <Route path="/contests/joined" element={<JoinedContests />} />
           <Route path="/contests/detail/:id" element={<ContestDetail />} />
           <Route path="/contests/detail/:id/posts" element={<ContestPosts />} />
           <Route path="/post" element={<Post />} />
+          <Route path="/posts/:id" element={<PostDetail />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:id" element={<Profile />} />
+          <Route path="/users/:id" element={<Profile />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

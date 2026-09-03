@@ -1,12 +1,16 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   getContestById,
   getPosts,
   getCurrentUser,
   getTournamentRanking,
   getTournamentParticipants,
+  getTournamentTitle,
+  joinTournament,
   cancelTournamentParticipation,
+  finalizeTournament,
+  formatScore,
 } from "../services/api";
 import "./ContestDetail.css";
 
@@ -19,10 +23,16 @@ const STATUS_LABEL = {
 function ContestDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const rankingRef = useRef(null);
   const [contest, setContest] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [ranking, setRanking] = useState([]);
   const [isParticipating, setIsParticipating] = useState(false);
+  const [titleAward, setTitleAward] = useState(null);
+  const [currentUserRank, setCurrentUserRank] = useState(null);
+  const [finalizeMessage, setFinalizeMessage] = useState("");
+  const [pageMessage, setPageMessage] = useState("");
 
   const loadParticipationState = async (tournamentId) => {
     const [currentUser, participants] = await Promise.all([
@@ -41,7 +51,7 @@ function ContestDetail() {
     });
 
     setIsParticipating(joined);
-    return currentUser;
+    return { currentUser, joined };
   };
 
   useEffect(() => {
@@ -55,13 +65,34 @@ function ContestDetail() {
         tournamentId,
       }),
       getTournamentRanking(tournamentId),
+      getTournamentTitle(tournamentId),
       loadParticipationState(tournamentId),
     ])
-      .then(([contestData, posts, rankingData]) => {
+      .then(([contestData, posts, rankingData, titleData, participation]) => {
         if (!mounted) return;
         setContest(contestData);
         setSubmissions(Array.isArray(posts) ? posts.slice(0, 4) : []);
         setRanking(Array.isArray(rankingData) ? rankingData.slice(0, 10) : []);
+        setTitleAward(titleData ?? contestData?.titleAward ?? null);
+        setIsParticipating(Boolean(contestData?.joinedByMe) || Boolean(participation?.joined));
+        setCurrentUserRank(
+          Array.isArray(rankingData)
+            ? rankingData.find(
+                (item) => Number(item.userId) === Number(participation?.currentUser?.id)
+              ) ?? null
+            : null
+        );
+
+        if (location.state?.postedRecord) {
+          setPageMessage("記録を投稿しました。最新ランキングを確認できます。");
+          window.history.replaceState({}, "");
+          setTimeout(() => {
+            rankingRef.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }, 120);
+        }
       })
       .catch((error) => {
         console.error("大会詳細データの取得に失敗しました:", error);
@@ -72,20 +103,60 @@ function ContestDetail() {
     return () => {
       mounted = false;
     };
-  }, [id]);
+  }, [id, location.state]);
 
   const handleCancelParticipation = async () => {
     try {
-      const currentUser = await getCurrentUser();
-      if (!currentUser?.id) {
-        throw new Error("現在のユーザー情報を取得できませんでした。");
-      }
-
-      await cancelTournamentParticipation(Number(id), currentUser.id);
+      const result = await cancelTournamentParticipation(Number(id));
       setIsParticipating(false);
+      if (typeof result?.participantsCount === "number") {
+        setContest((current) =>
+          current
+            ? {
+                ...current,
+                participants: result.participantsCount,
+                participantsCount: result.participantsCount,
+              }
+            : current
+        );
+      }
     } catch (error) {
       console.error("大会参加のキャンセルに失敗しました:", error);
       window.alert(error.message || "大会参加のキャンセルに失敗しました。");
+    }
+  };
+
+  const handleJoinParticipation = async () => {
+    try {
+      const result = await joinTournament(Number(id));
+      setIsParticipating(true);
+      if (typeof result?.participantsCount === "number") {
+        setContest((current) =>
+          current
+            ? {
+                ...current,
+                participants: result.participantsCount,
+                participantsCount: result.participantsCount,
+              }
+            : current
+        );
+      }
+    } catch (error) {
+      console.error("大会参加に失敗しました:", error);
+      window.alert(error.message || "大会参加に失敗しました。");
+    }
+  };
+
+  const handleFinalize = async () => {
+    try {
+      setFinalizeMessage("");
+      const result = await finalizeTournament(Number(id));
+      setFinalizeMessage(result.message || "大会結果を確定しました。");
+      setRanking(Array.isArray(result.ranking) ? result.ranking.slice(0, 10) : ranking);
+      setTitleAward(result.title ?? titleAward);
+    } catch (error) {
+      console.error("大会結果の確定に失敗しました:", error);
+      setFinalizeMessage(error.message || "大会結果の確定に失敗しました。");
     }
   };
 
@@ -113,6 +184,7 @@ function ContestDetail() {
 
   const topRanking = ranking.slice(0, 3);
   const ruleText = contest.rule ?? "";
+  const participantCount = contest.participantsCount ?? contest.participants ?? 0;
 
   return (
     <main className="contest-detail-page">
@@ -147,7 +219,7 @@ function ContestDetail() {
           <div className="contest-detail-meta">
             <div>
               <span>♧</span>
-              <strong>{contest.participants ?? 0}人</strong>
+              <strong>{participantCount}人</strong>
               <small>参加者</small>
             </div>
 
@@ -178,6 +250,38 @@ function ContestDetail() {
             大会ルールは準備中です。
           </p>
         )}
+      </section>
+
+      <section className="contest-detail-card contest-award-card">
+        <div className="contest-detail-section-head">
+          <h2>獲得できる称号</h2>
+          <small>優勝者に付与</small>
+        </div>
+
+        {titleAward?.imageUrl || titleAward?.image_url ? (
+          <div className="contest-award-preview">
+            <img src={titleAward.imageUrl ?? titleAward.image_url} alt="" />
+            <div>
+              <strong>{titleAward.name ?? "優勝称号"}</strong>
+              <span>{titleAward.description ?? "この大会の1位に贈られる称号です。"}</span>
+            </div>
+          </div>
+        ) : (
+          <p className="contest-detail-no-data">
+            この大会の称号画像はまだ設定されていません。
+          </p>
+        )}
+      </section>
+
+      <section className="contest-detail-card contest-evaluation-card">
+        <h2>評価方法</h2>
+        <p>
+          {contest.direction === "closest"
+            ? `目標 ${contest.target ?? "—"}${contest.unit ?? ""} に最も近い記録が上位です。`
+            : contest.direction === "lowest"
+              ? `記録が小さいほど上位です。単位: ${contest.unit || "未設定"}`
+              : `記録が大きいほど上位です。単位: ${contest.unit || "未設定"}`}
+        </p>
       </section>
 
       {/* 開催予定はここで終了 */}
@@ -211,11 +315,17 @@ function ContestDetail() {
             <button
               type="button"
               className="contest-detail-join-button"
-              onClick={() => navigate(`/post?contestId=${contest.id}`)}
+              onClick={handleJoinParticipation}
             >
               <span>♡</span>
               この大会に参加する
             </button>
+          )}
+
+          {pageMessage && (
+            <div className="contest-detail-message">
+              {pageMessage}
+            </div>
           )}
 
           {!isFinished && isParticipating && (
@@ -225,6 +335,16 @@ function ContestDetail() {
               onClick={handleCancelParticipation}
             >
               参加をキャンセルする
+            </button>
+          )}
+
+          {!isFinished && isParticipating && (
+            <button
+              type="button"
+              className="contest-detail-join-button contest-detail-join-button--secondary"
+              onClick={() => navigate(`/post?contestId=${contest.id}`)}
+            >
+              記録を投稿する
             </button>
           )}
 
@@ -243,7 +363,9 @@ function ContestDetail() {
                 </strong>
 
                 <p>
-                  {isParticipating || isFinished
+                  {currentUserRank
+                    ? `現在 ${currentUserRank.rank}位 / ${currentUserRank.scoreText ?? formatScore(currentUserRank.score, currentUserRank.decimalPlaces ?? contest.decimalPlaces, currentUserRank.unit ?? contest.unit ?? "")}`
+                    : isParticipating || isFinished
                     ? isFinished
                       ? "大会結果を確認できます。"
                       : "この大会に参加しています。自分のベスト記録に挑戦しよう！"
@@ -258,7 +380,7 @@ function ContestDetail() {
           </section>
 
           {/* ランキング */}
-          <section className="contest-detail-card">
+          <section className="contest-detail-card" ref={rankingRef}>
             <div className="contest-detail-section-head">
               <h2>
                 ランキング <small>（上位3名）</small>
@@ -269,12 +391,19 @@ function ContestDetail() {
             {topRanking.length > 0 ? (
               <div className="contest-ranking">
                 {topRanking.map((item) => (
-                  <div className="contest-ranking-row" key={item.rank}>
+                  <button
+                    type="button"
+                    className="contest-ranking-row"
+                    key={`${item.rank}-${item.userId}`}
+                    onClick={() =>
+                      item.userId ? navigate(`/profile/${item.userId}`) : null
+                    }
+                  >
                     <span className={`rank rank-${item.rank}`}>
                       {item.rank}
                     </span>
 
-                    <img src={item.image_url || contest.image} alt="" />
+                    <img src={item.imageUrl || item.image_url || contest.image} alt="" />
 
                     <strong>
                       {item.userName ||
@@ -285,10 +414,10 @@ function ContestDetail() {
                     <span className="ranking-score">
                       {item.rank === 1 && <b>♛</b>}
                       {contest.rankingLabel
-                        ? `${contest.rankingLabel} ${item.score}`
-                        : item.score}
+                        ? `${contest.rankingLabel} ${item.scoreText ?? formatScore(item.score, item.decimalPlaces ?? contest.decimalPlaces, item.unit ?? contest.unit ?? "")}`
+                        : item.scoreText ?? formatScore(item.score, item.decimalPlaces ?? contest.decimalPlaces, item.unit ?? contest.unit ?? "")}
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (
@@ -297,6 +426,16 @@ function ContestDetail() {
               </p>
             )}
           </section>
+
+          {isFinished && (
+            <section className="contest-detail-card contest-finalize-card">
+              <h2>大会結果</h2>
+              <button type="button" onClick={handleFinalize}>
+                結果を確定して称号を付与
+              </button>
+              {finalizeMessage && <p>{finalizeMessage}</p>}
+            </section>
+          )}
 
           {/* みんなの挑戦 */}
           <section className="contest-detail-card">
@@ -307,7 +446,7 @@ function ContestDetail() {
                 className="contest-detail-mode-button"
                 onClick={() => navigate(`/contests/detail/${contest.id}/posts`)}
               >
-                すべて見る　›
+                すべて見る ›
               </button>
             </div>
 
@@ -317,10 +456,14 @@ function ContestDetail() {
                   <div className="submission" key={item.id}>
                     <div className="submission-image">
                       <img
-                        src={item.image_url || contest.image}
+                        src={item.image || item.image_url || contest.image}
                         alt=""
                       />
-                      <span>{item.record ?? "—"}</span>
+                      <span>
+                        {item.record != null
+                          ? item.recordText ?? formatScore(item.record, contest.decimalPlaces, contest.unit ?? "")
+                          : "—"}
+                      </span>
                     </div>
 
                     <div className="submission-meta">

@@ -2,10 +2,13 @@ const express = require("express");
 const { createClient } = require("@supabase/supabase-js");
 const authRoutes = require("./routes/auth");
 const postsRoutes = require("./routes/posts");
+const recordsRoutes = require("./routes/records");
 const challengeRoutes = require("./routes/challenges");
 const dummyRoutes = require("./routes/dummy");
 const tournamentRoutes = require("./routes/tournaments");
 const tagsRoutes = require("./routes/tags");
+const authenticateUser = require("./middleware/auth");
+const { buildRanking } = require("./utils/ranking");
 require("dotenv").config();
 
 const app = express();
@@ -15,6 +18,43 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
+
+function getTournamentStatus(tournament) {
+  const now = Date.now();
+  const start = tournament?.start_at
+    ? new Date(tournament.start_at).getTime()
+    : Number.NEGATIVE_INFINITY;
+  const end = tournament?.end_at
+    ? new Date(tournament.end_at).getTime()
+    : Number.POSITIVE_INFINITY;
+
+  if (!Number.isNaN(start) && now < start) return "upcoming";
+  if (!Number.isNaN(end) && now > end) return "finished";
+
+  return "active";
+}
+
+async function countTournamentParticipants(tournamentId, fallback = 0) {
+  const { count, error } = await supabase
+    .from("tournament_participants")
+    .select("*", { count: "exact", head: true })
+    .eq("tournament_id", tournamentId);
+
+  if (error) throw error;
+
+  return count ?? Number(fallback ?? 0);
+}
+
+async function getTournamentRanking(tournament) {
+  const { data: records, error } = await supabase
+    .from("records")
+    .select("*, users(display_name, icon_url), posts(image_url, media, content)")
+    .eq("tournament_id", tournament.id);
+
+  if (error) throw error;
+
+  return buildRanking(records ?? [], tournament);
+}
 
 app.use(express.json({ limit: "10mb" }));
 
@@ -33,6 +73,7 @@ app.use((req, res, next) => {
 // Routes
 app.use("/auth", authRoutes);
 app.use("/posts", postsRoutes);
+app.use("/records", recordsRoutes);
 app.use("/challenges", challengeRoutes);
 app.use("/dummy", dummyRoutes);
 app.use("/tournaments", tournamentRoutes);
@@ -118,6 +159,160 @@ app.get("/users", async (req, res) => {
   })));
 });
 
+app.get("/users/:id/titles", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({
+      message: "ユーザーIDが不正です"
+    });
+  }
+
+  const { data, error } = await supabase
+    .from("user_titles")
+    .select("*, titles(*), tournaments(title, image_url), records(score, unit)")
+    .eq("user_id", id)
+    .order("awarded_at", { ascending: false });
+
+  if (error) {
+    return res.status(500).json({
+      message: "称号一覧の取得に失敗しました",
+      error: error.message
+    });
+  }
+
+  return res.json((data ?? []).map((item) => ({
+    id: item.id,
+    titleId: item.title_id,
+    userId: item.user_id,
+    tournamentId: item.tournament_id,
+    tournamentTitle: item.tournaments?.title ?? "",
+    name: item.titles?.name ?? "称号",
+    description: item.titles?.description ?? "",
+    imageUrl: item.titles?.image_url ?? "",
+    rarity: item.titles?.rarity ?? "winner",
+    recordId: item.record_id,
+    score: item.records?.score ?? null,
+    unit: item.records?.unit ?? "",
+    rank: item.rank,
+    awardedAt: item.awarded_at
+  })));
+});
+
+app.get("/me/titles", authenticateUser, async (req, res) => {
+  const { data, error } = await supabase
+    .from("user_titles")
+    .select("*, titles(*), tournaments(title, image_url), records(score, unit)")
+    .eq("user_id", req.userId)
+    .order("awarded_at", { ascending: false });
+
+  if (error) {
+    return res.status(500).json({
+      message: "称号一覧の取得に失敗しました",
+      error: error.message
+    });
+  }
+
+  return res.json((data ?? []).map((item) => ({
+    id: item.id,
+    titleId: item.title_id,
+    userId: item.user_id,
+    tournamentId: item.tournament_id,
+    tournamentTitle: item.tournaments?.title ?? "",
+    name: item.titles?.name ?? "称号",
+    description: item.titles?.description ?? "",
+    imageUrl: item.titles?.image_url ?? "",
+    rarity: item.titles?.rarity ?? "winner",
+    recordId: item.record_id,
+    score: item.records?.score ?? null,
+    unit: item.records?.unit ?? "",
+    rank: item.rank,
+    awardedAt: item.awarded_at
+  })));
+});
+
+app.get("/users/:id/records", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({
+      message: "ユーザーIDが不正です"
+    });
+  }
+
+  const { data, error } = await supabase
+    .from("records")
+    .select("*, tournaments(title, unit, target, direction, decimal_places)")
+    .eq("user_id", id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return res.status(500).json({
+      message: "記録一覧の取得に失敗しました",
+      error: error.message
+    });
+  }
+
+  return res.json(data ?? []);
+});
+
+app.get("/users/:id/tournaments", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({
+      message: "ユーザーIDが不正です"
+    });
+  }
+
+  const { data, error } = await supabase
+    .from("tournament_participants")
+    .select("*, tournaments(*)")
+    .eq("user_id", id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return res.status(500).json({
+      message: "参加大会一覧の取得に失敗しました",
+      error: error.message
+    });
+  }
+
+  try {
+    const joinedTournaments = await Promise.all(
+      (data ?? []).map(async (item) => {
+        const tournament = item.tournaments;
+        const participantsCount = await countTournamentParticipants(
+          tournament.id,
+          tournament.participants
+        );
+        const ranking = await getTournamentRanking(tournament);
+        const myRanking = ranking.find(
+          (rankItem) => Number(rankItem.userId) === id
+        );
+
+        return {
+          ...tournament,
+          status: getTournamentStatus(tournament),
+          participants: participantsCount,
+          participantsCount,
+          joinedAt: item.created_at,
+          myRank: myRanking?.rank ?? null,
+          myBestScore: myRanking?.scoreText ?? null,
+          myBestRecordId: myRanking?.recordId ?? null,
+        };
+      })
+    );
+
+    return res.json(joinedTournaments);
+  } catch (detailError) {
+    return res.status(500).json({
+      message: "参加大会詳細の取得に失敗しました",
+      error: detailError.message
+    });
+  }
+});
+
 // ユーザー取得API（DBのuser_idを使用）
 app.get("/user/:id", async (req, res) => {
   const id = Number(req.params.id);
@@ -163,28 +358,10 @@ app.get("/user/:id", async (req, res) => {
   });
 });
 
-// 記録送信API（現状はメモリ保存）
-const records = [
-  {
-    id: 1,
-    userId: 1,
-    tournamentId: 1,
-    score: 35.2
-  }
-];
-
-app.post("/record", (req, res) => {
-  const { userId, tournamentId, score } = req.body;
-
-  const newRecord = {
-    id: records.length + 1,
-    userId,
-    tournamentId,
-    score
-  };
-
-  records.push(newRecord);
-  return res.json(newRecord);
+// 旧URL互換: 実処理は /records に統一。
+app.post("/record", authenticateUser, async (req, res, next) => {
+  req.url = "/";
+  return recordsRoutes(req, res, next);
 });
 
 // Supabase接続テスト
@@ -219,4 +396,3 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-

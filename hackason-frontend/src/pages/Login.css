@@ -216,6 +216,18 @@
   text-align: center;
 }
 
+.login-link-button {
+  display: block;
+  margin: 12px auto 0;
+  border: 0;
+  background: transparent;
+  color: #6e47df;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 @media (min-width: 700px) {
   .login-page {
     padding: 40px;

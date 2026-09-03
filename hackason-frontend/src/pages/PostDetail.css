@@ -88,6 +88,34 @@
   object-fit: cover;
 }
 
+.post-detail-media-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.post-detail-media-grid .post-detail-image {
+  margin-top: 0;
+}
+
+.post-detail-record {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  margin-top: 12px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #fff6df;
+  color: #9a6500;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.post-detail-record strong {
+  font-size: 16px;
+}
+
 .post-detail-actions {
   display: flex;
   gap: 18px;

@@ -142,7 +142,7 @@ router.get("/", async (req, res) => {
 
   let query = supabase
     .from("posts")
-    .select("*");
+    .select("*, tournaments(unit, decimal_places)");
 
   if (type) {
     query = query.eq("type", type);
@@ -235,7 +235,7 @@ router.get("/:id", async (req, res) => {
 
   const { data: post, error } = await supabase
     .from("posts")
-    .select("*")
+    .select("*, tournaments(unit, decimal_places)")
     .eq("id", postId)
     .single();
 

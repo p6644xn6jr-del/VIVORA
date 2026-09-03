@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "./Post.css";
 import {
+  createRecord,
   createPost,
   getContests,
   getCurrentUser,
@@ -24,6 +25,7 @@ function Post() {
     : null;
   const fileInputRef = useRef(null);
   const previewUrlsRef = useRef([]);
+  const submitLockRef = useRef(false);
 
   const [body, setBody] = useState("");
   const [postType, setPostType] = useState("こだわり");
@@ -39,6 +41,8 @@ function Post() {
   const [mediaError, setMediaError] = useState("");
   const [contests, setContests] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  const [recordScore, setRecordScore] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     getCurrentUser()
@@ -51,8 +55,10 @@ function Post() {
   }, []);
 
   useEffect(() => {
+    const previewUrls = previewUrlsRef.current;
+
     return () => {
-      previewUrlsRef.current.forEach(({ url }) => URL.revokeObjectURL(url));
+      previewUrls.forEach(({ url }) => URL.revokeObjectURL(url));
     };
   }, []);
 
@@ -221,97 +227,141 @@ function Post() {
     }
   };
 
-  const submitPost = () => {
-    if (!currentUser?.id) {
-      window.alert(
-        "ユーザー情報を読み込んでいます。少し待ってから投稿してください。"
-      );
+  const releaseSubmitLock = () => {
+    submitLockRef.current = false;
+    setIsSubmitting(false);
+  };
+
+  const submitPost = async () => {
+    if (submitLockRef.current) {
       return;
     }
 
-    if (!body.trim() && media.length === 0) {
-      window.alert("写真・動画か、本文を1つ以上追加してください。");
-      return;
-    }
+    submitLockRef.current = true;
+    setIsSubmitting(true);
+    let savedTournamentPost = null;
 
-    if (postType === "大会" && !selectedContest) {
-      window.alert("投稿する大会を1つ選択してください。");
-      return;
-    }
+    try {
+      if (!currentUser?.id) {
+        window.alert(
+          "ユーザー情報を読み込んでいます。少し待ってから投稿してください。"
+        );
+        releaseSubmitLock();
+        return;
+      }
 
-    const postDraft = {
-      userId: currentUser.id,
+      if (!body.trim() && media.length === 0) {
+        window.alert("写真・動画か、本文を1つ以上追加してください。");
+        releaseSubmitLock();
+        return;
+      }
 
-      content: body.trim(),
+      if (postType === "大会" && !selectedContest) {
+        window.alert("投稿する大会を1つ選択してください。");
+        releaseSubmitLock();
+        return;
+      }
 
-      imageUrl: "",
-      media: [],
+      if (postType === "大会" && !Number.isFinite(Number(recordScore))) {
+        window.alert("大会の記録を数値で入力してください。");
+        releaseSubmitLock();
+        return;
+      }
 
-      tags: postType === "大会" ? ["大会"] : tags,
+      const postDraft = {
+        content: body.trim(),
 
-      type:
-        postType === "大会"
-          ? "tournament"
-          : "commitment",
+        imageUrl: "",
+        media: [],
 
-      tournamentId:
-        postType === "大会"
-          ? selectedContest?.id ?? null
-          : null,
+        tags: postType === "大会" ? ["大会"] : tags,
 
-      record:
-        postType === "大会"
-          ? 0
-          : null,
+        type:
+          postType === "大会"
+            ? "tournament"
+            : "commitment",
 
-      postType,
-      visibility,
-    };
+        tournamentId:
+          postType === "大会"
+            ? selectedContest?.id ?? null
+            : null,
 
-    (async () => {
-      try {
-        const uploadedMedia = [];
+        record:
+          postType === "大会"
+            ? Number(recordScore)
+            : null,
 
-        for (const file of media) {
-          const uploaded = await uploadPostMedia(file);
-          uploadedMedia.push(uploaded);
-        }
+        postType,
+        visibility,
+      };
 
-        await createPost({
-          ...postDraft,
-          imageUrl: uploadedMedia[0]?.mediaUrl || "",
-          media: uploadedMedia,
+      const uploadedMedia = [];
+
+      for (const file of media) {
+        const uploaded = await uploadPostMedia(file);
+        uploadedMedia.push(uploaded);
+      }
+
+      if (
+        postType === "大会" &&
+        selectedContest?.id != null
+      ) {
+        await joinTournament(selectedContest.id);
+      }
+
+      const savedPost = await createPost({
+        ...postDraft,
+        imageUrl: uploadedMedia[0]?.mediaUrl || "",
+        media: uploadedMedia,
+      });
+
+      if (
+        postType === "大会" &&
+        selectedContest?.id != null
+      ) {
+        savedTournamentPost = savedPost;
+        await createRecord({
+          tournamentId: selectedContest.id,
+          postId: savedPost.id,
+          score: Number(recordScore),
+          unit: selectedContest.unit,
         });
 
-        if (
-          postType === "大会" &&
-          selectedContest?.id != null
-        ) {
-          await joinTournament(
-            selectedContest.id,
-            currentUser.id
-          );
-        }
-
-        setSubmitted(true);
-      } catch (error) {
-        console.error(
-          "メディアアップロード、投稿、または大会参加登録に失敗しました:",
-          error
-        );
-
-        window.alert(
-          error?.message ||
-            "画像・動画のアップロードまたは投稿に失敗しました。"
-        );
+        window.alert("記録を投稿しました。");
+        navigate(`/contests/detail/${selectedContest.id}`, {
+          replace: true,
+          state: {
+            postedRecord: true,
+            focus: "ranking",
+            postId: savedPost.id,
+          },
+        });
+        return;
       }
-    })();
+
+      setSubmitted(true);
+    } catch (error) {
+      console.error(
+        "メディアアップロード、投稿、または大会参加登録に失敗しました:",
+        error
+      );
+
+      window.alert(
+        savedTournamentPost
+          ? `投稿は保存されましたが、記録の保存に失敗しました。ランキングには反映されていません。${error?.message ? `\n${error.message}` : ""}`
+          : error?.message ||
+              "画像・動画のアップロードまたは投稿に失敗しました。"
+      );
+      releaseSubmitLock();
+    }
   };
 
   const resetDraft = () => {
     setSubmitted(false);
+    releaseSubmitLock();
     setBody("");
     setMedia([]);
+    setRecordScore("");
     setTags(initialTagFromUrl ? [initialTagFromUrl] : []);
     setNewTag("");
 
@@ -371,6 +421,10 @@ function Post() {
   const hasMedia = media.length > 0;
   const mainMedia = media[0];
   const extraMedia = media.slice(1);
+  const recordStep =
+    selectedContest?.decimalPlaces > 0
+      ? `0.${"0".repeat(selectedContest.decimalPlaces - 1)}1`
+      : "1";
 
   return (
     <main className={`post-page ${hasMedia ? "has-media" : ""}`}>
@@ -395,8 +449,9 @@ function Post() {
             hasMedia ? "is-secondary" : ""
           }`}
           onClick={submitPost}
+          disabled={isSubmitting}
         >
-          {hasMedia ? "下書き保存" : "投稿する"}
+          {isSubmitting ? "投稿中..." : hasMedia ? "下書き保存" : "投稿する"}
         </button>
       </header>
 
@@ -534,7 +589,7 @@ function Post() {
             </span>
             <strong>写真・動画を追加</strong>
             <small>
-              最大10件・動画は60秒まで
+              最大5件・動画は60秒まで
             </small>
           </button>
         </section>
@@ -551,7 +606,7 @@ function Post() {
           </span>
           <strong>写真・動画を追加</strong>
           <small>
-            最大10件・動画は60秒まで
+            最大5件・動画は60秒まで
           </small>
         </button>
       )}
@@ -730,6 +785,33 @@ function Post() {
         </section>
       )}
 
+      {postType === "大会" && selectedContest && (
+        <section className="post-option-section post-record-section">
+          <div className="post-section-heading">
+            <h2>記録を入力</h2>
+            <span>
+              {selectedContest.direction === "closest"
+                ? `目標 ${selectedContest.target ?? "—"}${selectedContest.unit ?? ""} に近いほど上位`
+                : selectedContest.direction === "lowest"
+                  ? "小さいほど上位"
+                  : "大きいほど上位"}
+            </span>
+          </div>
+
+          <label className="post-record-input">
+            <input
+              type="number"
+              inputMode="decimal"
+              step={recordStep}
+              value={recordScore}
+              onChange={(event) => setRecordScore(event.target.value)}
+              placeholder="9.54"
+            />
+            <span>{selectedContest.unit || "記録"}</span>
+          </label>
+        </section>
+      )}
+
       <section className="post-setting-list">
         <button
           type="button"
@@ -806,12 +888,13 @@ function Post() {
       </section>
 
       <div className="post-submit-area">
-        <button
-          type="button"
-          className="post-primary-button"
-          onClick={submitPost}
-        >
-          ⟶ 投稿する
+          <button
+            type="button"
+            className="post-primary-button"
+            onClick={submitPost}
+            disabled={isSubmitting}
+          >
+          {isSubmitting ? "投稿中..." : "⟶ 投稿する"}
         </button>
 
         <p>🔒 投稿内容はあとから編集できます</p>

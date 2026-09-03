@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   getPosts,
   getUserById,
+  getUserRecords,
+  getUserTitles,
   getStoredUser,
 } from "../services/api";
 import PostCard from "../components/PostCard";
@@ -25,6 +27,8 @@ function Profile() {
 
   const [user, setUser] = useState(null);
   const [postCount, setPostCount] = useState(null);
+  const [titles, setTitles] = useState([]);
+  const [records, setRecords] = useState([]);
   const [error, setError] = useState("");
   const [postType, setPostType] = useState("commitment");
 
@@ -45,8 +49,10 @@ function Profile() {
     Promise.all([
       getUserById(resolvedTargetId),
       getPosts({ userId: resolvedTargetId }),
+      getUserTitles(resolvedTargetId),
+      getUserRecords(resolvedTargetId),
     ])
-      .then(([userData, posts]) => {
+      .then(([userData, posts, titleData, recordData]) => {
         if (!mounted) return;
 
         if (!userData) {
@@ -56,6 +62,8 @@ function Profile() {
 
         setUser(userData);
         setPostCount(Array.isArray(posts) ? posts.length : 0);
+        setTitles(Array.isArray(titleData) ? titleData : []);
+        setRecords(Array.isArray(recordData) ? recordData.slice(0, 3) : []);
       })
       .catch((err) => {
         console.error("プロフィール情報の取得に失敗しました:", err);
@@ -170,6 +178,64 @@ function Profile() {
             <strong>準備中です</strong>
           </div>
         </div>
+      </section>
+
+      <section className="profile-titles">
+        <div className="profile-section-heading">
+          <h2>{isOwnProfile ? "獲得称号" : `${user.name}の称号`}</h2>
+          <span>{titles.length}件</span>
+        </div>
+
+        {titles.length > 0 ? (
+          <div className="profile-title-grid">
+            {titles.map((title) => (
+              <button
+                type="button"
+                className="profile-title-card"
+                key={title.id}
+                onClick={() =>
+                  title.tournamentId
+                    ? navigate(`/contests/detail/${title.tournamentId}`)
+                    : null
+                }
+              >
+                <img src={title.imageUrl} alt="" />
+                <strong>{title.name}</strong>
+                <span>{title.tournamentTitle || "大会称号"}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="profile-empty-panel">
+            まだ称号はありません。
+          </div>
+        )}
+      </section>
+
+      <section className="profile-records">
+        <div className="profile-section-heading">
+          <h2>{isOwnProfile ? "最近の記録" : `${user.name}の記録`}</h2>
+        </div>
+
+        {records.length > 0 ? (
+          <div className="profile-record-list">
+            {records.map((record) => (
+              <button
+                type="button"
+                className="profile-record-row"
+                key={record.id}
+                onClick={() => navigate(`/contests/detail/${record.tournamentId}`)}
+              >
+                <span>{record.tournamentTitle || "大会"}</span>
+                <strong>{record.scoreText ?? `${record.score}${record.unit}`}</strong>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="profile-empty-panel">
+            まだ大会記録はありません。
+          </div>
+        )}
       </section>
 
       <section className="profile-posts">

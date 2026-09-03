@@ -81,13 +81,40 @@ export default function PostDetail() {
 
         <p className="post-detail-text">{post.text}</p>
 
-        {post.image && (
+        {post.postType === "tournament" && post.record != null && (
+          <div className="post-detail-record">
+            記録 <strong>{post.recordText ?? post.record}</strong>
+          </div>
+        )}
+
+        {post.media?.length > 0 ? (
+          <div className="post-detail-media-grid">
+            {post.media.map((item, index) =>
+              item.mediaType === "video" ? (
+                <video
+                  key={`${item.mediaUrl}-${index}`}
+                  className="post-detail-image"
+                  src={item.mediaUrl}
+                  controls
+                  playsInline
+                />
+              ) : (
+                <img
+                  key={`${item.mediaUrl}-${index}`}
+                  className="post-detail-image"
+                  src={item.mediaUrl}
+                  alt={post.text || "投稿画像"}
+                />
+              )
+            )}
+          </div>
+        ) : post.image ? (
           <img
             className="post-detail-image"
             src={post.image}
             alt={post.text || "投稿画像"}
           />
-        )}
+        ) : null}
 
         <div className="post-detail-actions">
           <span>♡ {post.likes}</span>

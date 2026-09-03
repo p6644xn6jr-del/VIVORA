@@ -174,6 +174,24 @@
   font-size: 23px;
 }
 
+.contest-detail-join-button--secondary {
+  margin-top: 8px;
+  background: #111;
+  box-shadow: none;
+}
+
+.contest-detail-message {
+  margin: 12px 0 10px;
+  padding: 12px 14px;
+  border: 1px solid #cdebd4;
+  border-radius: 12px;
+  background: #f0fff4;
+  color: #26723c;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
 .contest-detail-join-button.is-upcoming {
   background: #fff;
   color: var(--cd-purple);
@@ -193,6 +211,62 @@
 .contest-detail-card h2 {
   margin: 0 0 11px;
   font-size: 16px;
+}
+
+.contest-award-preview {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.contest-award-preview img {
+  width: 88px;
+  height: 88px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: #f5f2ff;
+  box-shadow: 0 8px 18px rgba(102, 52, 242, 0.14);
+}
+
+.contest-award-preview strong,
+.contest-award-preview span {
+  display: block;
+}
+
+.contest-award-preview strong {
+  font-size: 15px;
+}
+
+.contest-award-preview span {
+  margin-top: 5px;
+  color: var(--cd-sub);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.contest-evaluation-card p,
+.contest-finalize-card p {
+  margin: 0;
+  color: var(--cd-sub);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.contest-finalize-card button {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-radius: 12px;
+  background: #111;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.contest-finalize-card p {
+  margin-top: 10px;
 }
 
 .contest-detail-section-head {
@@ -261,8 +335,15 @@
   grid-template-columns: 28px 38px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
+  width: 100%;
   min-height: 46px;
+  padding: 0;
+  border: 0;
   border-bottom: 1px solid #eee;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .contest-ranking-row:last-child {

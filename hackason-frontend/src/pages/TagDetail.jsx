@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getPosts, getTagByName } from "../services/api";
+import { getTagByName } from "../services/api";
 import PostCard from "../components/PostCard";
 import "./TagDetail.css";
 

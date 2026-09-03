@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getContestById,
-  getLikedPostIds,
   getPosts,
   togglePostLike,
 } from "../services/api";
@@ -302,16 +301,41 @@ export default function PostCard({ tag, userId, sortMode, type, tournamentId }) 
               <h4>{post.text}</h4>
             </div>
 
-            {post.image && (
-              <img
-                src={post.image}
-                alt={post.text || "投稿画像"}
-                className="post-image"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  navigate(`/posts/${post.id}`);
-                }}
-              />
+            {(post.media?.length > 0 || post.image) && (
+              <div className="post-media-preview">
+                {post.media?.[0]?.mediaType === "video" ? (
+                  <video
+                    src={post.media[0].mediaUrl}
+                    className="post-image"
+                    muted
+                    playsInline
+                    controls
+                    onClick={(event) => event.stopPropagation()}
+                  />
+                ) : (
+                  <img
+                    src={post.media?.[0]?.mediaUrl || post.image}
+                    alt={post.text || "投稿画像"}
+                    className="post-image"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      navigate(`/posts/${post.id}`);
+                    }}
+                  />
+                )}
+
+                {post.media?.length > 1 && (
+                  <span className="post-media-preview__count">
+                    1/{post.media.length}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {post.postType === "tournament" && post.record != null && (
+              <div className="post-record-badge">
+                記録 {post.recordText ?? post.record}
+              </div>
             )}
 
             <div className="post-content">

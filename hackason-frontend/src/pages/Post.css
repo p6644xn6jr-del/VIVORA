@@ -53,6 +53,13 @@
   cursor: pointer;
 }
 
+.post-header-submit:disabled,
+.post-primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+  box-shadow: none;
+}
+
 .post-user {
   display: flex;
   align-items: center;
@@ -205,6 +212,42 @@
 
 .post-option-section {
   margin-bottom: 22px;
+}
+
+.post-record-section {
+  padding: 14px;
+  border: 1px solid #efe6d8;
+  border-radius: 14px;
+  background: #fffaf2;
+}
+
+.post-record-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.post-record-input input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid #ead8b5;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  font-size: 22px;
+  font-weight: 800;
+  outline: none;
+}
+
+.post-record-input span {
+  min-width: 44px;
+  color: #9a6500;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .post-option-section h2,

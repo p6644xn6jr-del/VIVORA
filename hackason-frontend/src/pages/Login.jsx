@@ -88,6 +88,14 @@ function Login() {
         <p className="login-note">
           Supabase Authを使ってログインします。
         </p>
+
+        <button
+          type="button"
+          className="login-link-button"
+          onClick={() => navigate("/signup")}
+        >
+          アカウントを作成する
+        </button>
       </section>
     </main>
   );

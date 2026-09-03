@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { signup } from "../services/api";
 
 function Signup() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -54,10 +56,6 @@ function Signup() {
       alert("自己紹介を入力してください。");
       return;
     }
-    if (!icon) {
-      alert("アイコンをアップロードしてください。");
-      return;
-    }
     if (password !== confirmPassword) {
       alert("パスワードが一致しません。");
       return;
@@ -78,8 +76,8 @@ function Signup() {
       });
 
       console.log("登録成功:", result);
-      alert("登録成功！");
-      setStep(1);
+      alert("登録成功！ログインしてください。");
+      navigate("/login");
     } catch (error) {
       console.error("登録に失敗しました:", error);
       alert(error.message || "登録に失敗しました。");
