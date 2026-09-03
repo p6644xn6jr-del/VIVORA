@@ -12,6 +12,15 @@ const supabase = createClient(
 
 const authenticateUser = require("../middleware/auth");
 
+async function countPostComments(postId) {
+  const { count } = await supabase
+    .from("post_comments")
+    .select("*", { count: "exact", head: true })
+    .eq("post_id", postId);
+
+  return count || 0;
+}
+
 // 投稿を作る
 router.post("/", authenticateUser, async (req, res) => {
   const {
@@ -221,6 +230,7 @@ router.get("/", async (req, res) => {
       return {
         ...post,
         likes: count || 0,
+        comments: await countPostComments(post.id),
         likedByMe: likedByMe
       };
     })
@@ -287,7 +297,114 @@ router.get("/:id", async (req, res) => {
   return res.status(200).json({
     ...post,
     likes: count || 0,
+    comments: await countPostComments(postId),
     likedByMe: likedByMe
+  });
+});
+
+// 投稿コメント一覧
+router.get("/:id/comments", async (req, res) => {
+  const postId = Number(req.params.id);
+
+  if (!Number.isInteger(postId)) {
+    return res.status(400).json({
+      message: "投稿IDが不正です"
+    });
+  }
+
+  const { data, error } = await supabase
+    .from("post_comments")
+    .select("*, users(display_name, icon_url)")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    return res.status(500).json({
+      message: "コメント一覧の取得に失敗しました",
+      error: error.message
+    });
+  }
+
+  return res.json(data ?? []);
+});
+
+// 投稿コメント作成
+router.post("/:id/comments", authenticateUser, async (req, res) => {
+  const postId = Number(req.params.id);
+  const content = String(req.body?.content ?? "").trim();
+
+  if (!Number.isInteger(postId)) {
+    return res.status(400).json({
+      message: "投稿IDが不正です"
+    });
+  }
+
+  if (!content) {
+    return res.status(400).json({
+      message: "コメントを入力してください"
+    });
+  }
+
+  if (content.length > 300) {
+    return res.status(400).json({
+      message: "コメントは300文字以内で入力してください"
+    });
+  }
+
+  const { data, error } = await supabase
+    .from("post_comments")
+    .insert([
+      {
+        post_id: postId,
+        user_id: req.userId,
+        content
+      }
+    ])
+    .select("*, users(display_name, icon_url)")
+    .single();
+
+  if (error) {
+    return res.status(500).json({
+      message: "コメントの保存に失敗しました",
+      error: error.message
+    });
+  }
+
+  return res.status(201).json({
+    message: "コメントしました",
+    comment: data,
+    comments: await countPostComments(postId)
+  });
+});
+
+// 投稿コメント削除
+router.delete("/:id/comments/:commentId", authenticateUser, async (req, res) => {
+  const postId = Number(req.params.id);
+  const commentId = Number(req.params.commentId);
+
+  if (!Number.isInteger(postId) || !Number.isInteger(commentId)) {
+    return res.status(400).json({
+      message: "コメントIDが不正です"
+    });
+  }
+
+  const { error } = await supabase
+    .from("post_comments")
+    .delete()
+    .eq("id", commentId)
+    .eq("post_id", postId)
+    .eq("user_id", req.userId);
+
+  if (error) {
+    return res.status(500).json({
+      message: "コメントの削除に失敗しました",
+      error: error.message
+    });
+  }
+
+  return res.json({
+    message: "コメントを削除しました",
+    comments: await countPostComments(postId)
   });
 });
 

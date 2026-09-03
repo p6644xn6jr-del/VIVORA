@@ -151,6 +151,30 @@ function normalizeRecord(record) {
   };
 }
 
+function normalizeComment(comment) {
+  return {
+    ...comment,
+    id: comment?.id,
+    postId: comment?.postId ?? comment?.post_id,
+    userId: comment?.userId ?? comment?.user_id,
+    userName:
+      comment?.userName ??
+      comment?.users?.display_name ??
+      `ユーザー${comment?.user_id ?? ""}`,
+    userIcon:
+      comment?.userIcon ??
+      comment?.users?.icon_url ??
+      "🙂",
+    content: comment?.content ?? "",
+    createdAt: comment?.createdAt ?? comment?.created_at ?? null,
+    createdAtText:
+      comment?.createdAtText ??
+      (comment?.created_at
+        ? new Date(comment.created_at).toLocaleString("ja-JP")
+        : "日時不明"),
+  };
+}
+
 export function getStoredSession() {
   const accessToken =
     localStorage.getItem("accessToken") ??
@@ -384,7 +408,9 @@ export async function getPosts({ tag, userId, sortMode, type, tournamentId } = {
 }
 
 export async function getPostById(id) {
-  const res = await fetch(`${API_BASE_URL}/posts/${encodeURIComponent(id)}`);
+  const res = await fetch(`${API_BASE_URL}/posts/${encodeURIComponent(id)}`, {
+    headers: getAuthHeaders(),
+  });
   if (res.status === 404) return null;
 
   const post = normalizePost(await readJson(res));
@@ -589,6 +615,48 @@ export async function togglePostLike(id, currentlyLiked = false) {
     postId: Number(id),
     likes: Number(data?.likes ?? 0),
   }));
+}
+
+export async function getPostComments(postId) {
+  const res = await fetch(
+    `${API_BASE_URL}/posts/${encodeURIComponent(postId)}/comments`
+  );
+  const data = await readJson(res);
+  return (Array.isArray(data) ? data : []).map(normalizeComment);
+}
+
+export async function createPostComment(postId, content) {
+  const res = await fetch(
+    `${API_BASE_URL}/posts/${encodeURIComponent(postId)}/comments`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ content }),
+    }
+  );
+
+  const data = await readJson(res);
+  return {
+    comment: normalizeComment(data.comment ?? data),
+    comments: Number(data.comments ?? 0),
+  };
+}
+
+export async function deletePostComment(postId, commentId) {
+  const res = await fetch(
+    `${API_BASE_URL}/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`,
+    {
+      method: "DELETE",
+      headers: {
+        ...getAuthHeaders(),
+      },
+    }
+  );
+
+  return readJson(res);
 }
 export async function getTags(sort = "popular") {
   const query = sort ? `?sort=${encodeURIComponent(sort)}` : "";

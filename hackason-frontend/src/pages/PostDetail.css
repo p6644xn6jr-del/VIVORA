@@ -146,7 +146,147 @@
   font-weight: 700;
 }
 
+.post-detail-like.liked {
+  border-color: #ffc5d1;
+  background: #fff0f4;
+  color: #d7355f;
+}
+
+.post-detail-like:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .post-detail-like__icon {
   font-size: 17px;
   line-height: 1;
+}
+
+.post-detail-comments {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #e9e7ed;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.post-detail-comments__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.post-detail-comments__head h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.post-detail-comments__head span {
+  color: #888;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.post-detail-comment-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 68px;
+  gap: 8px;
+}
+
+.post-detail-comment-form input {
+  min-width: 0;
+  border: 1px solid #ded8e8;
+  border-radius: 999px;
+  padding: 0 13px;
+  background: #faf9ff;
+  color: #222;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.post-detail-comment-form button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: #7a4dff;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.post-detail-comment-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.post-detail-comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.post-detail-comment {
+  padding-top: 12px;
+  border-top: 1px solid #f0edf4;
+}
+
+.post-detail-comment__user {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #222;
+  font: inherit;
+  cursor: pointer;
+}
+
+.post-detail-comment__user span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f0ebff;
+}
+
+.post-detail-comment__user strong {
+  font-size: 12px;
+}
+
+.post-detail-comment p {
+  margin: 8px 0;
+  color: #333;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.post-detail-comment div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #999;
+  font-size: 10px;
+}
+
+.post-detail-comment div button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #7a4dff;
+  font: inherit;
+  font-weight: 800;
+}
+
+.post-detail-comment-empty {
+  margin: 14px 0 0;
+  color: #888;
+  font-size: 12px;
 }
