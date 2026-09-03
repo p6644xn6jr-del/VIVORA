@@ -40,6 +40,14 @@ function normalizeContest(contest) {
     unit: contest?.unit ?? "",
     direction: contest?.direction ?? "highest",
     decimalPlaces: Number(contest?.decimalPlaces ?? contest?.decimal_places ?? 0),
+    evaluationType: contest?.evaluationType ?? contest?.evaluation_type ?? "objective",
+    aiCriteria: contest?.aiCriteria ?? contest?.ai_criteria ?? "",
+    aiScoreMin: Number(contest?.aiScoreMin ?? contest?.ai_score_min ?? 0),
+    aiScoreMax: Number(contest?.aiScoreMax ?? contest?.ai_score_max ?? 100),
+    evaluationProvider:
+      contest?.evaluationProvider ?? contest?.evaluation_provider ?? null,
+    evaluationVersion:
+      contest?.evaluationVersion ?? contest?.evaluation_version ?? "v1",
     titleAward: contest?.titleAward ?? contest?.title_award ?? null,
     joinedByMe: contest?.joinedByMe ?? contest?.joined_by_me ?? false,
     resultFinalizedAt:
@@ -175,6 +183,31 @@ function normalizeComment(comment) {
   };
 }
 
+function normalizeEvaluation(evaluation) {
+  if (!evaluation) return null;
+
+  return {
+    ...evaluation,
+    id: evaluation?.id,
+    tournamentId: evaluation?.tournamentId ?? evaluation?.tournament_id,
+    postId: evaluation?.postId ?? evaluation?.post_id,
+    recordId: evaluation?.recordId ?? evaluation?.record_id,
+    userId: evaluation?.userId ?? evaluation?.user_id,
+    evaluationType:
+      evaluation?.evaluationType ?? evaluation?.evaluation_type ?? "objective",
+    status: evaluation?.status ?? "pending",
+    provider: evaluation?.provider ?? "",
+    version: evaluation?.version ?? "v1",
+    score: evaluation?.score == null ? null : Number(evaluation.score),
+    feedback: evaluation?.feedback ?? "",
+    criteria: evaluation?.criteria ?? "",
+    errorCode: evaluation?.errorCode ?? evaluation?.error_code ?? "",
+    errorMessage: evaluation?.errorMessage ?? evaluation?.error_message ?? "",
+    evaluatedAt: evaluation?.evaluatedAt ?? evaluation?.evaluated_at ?? null,
+    createdAt: evaluation?.createdAt ?? evaluation?.created_at ?? null,
+  };
+}
+
 export function getStoredSession() {
   const accessToken =
     localStorage.getItem("accessToken") ??
@@ -250,6 +283,14 @@ export async function getPopularContests() {
     : (Array.isArray(data?.tournaments) ? data.tournaments : []);
 
   return list.map(normalizeContest);
+}
+
+export async function getRecommendedContests() {
+  const res = await fetch(`${API_BASE_URL}/recommendations/tournaments`, {
+    headers: getAuthHeaders(),
+  });
+  const data = await readJson(res);
+  return (Array.isArray(data) ? data : []).map(normalizeContest);
 }
 
 export async function getContestById(id) {
@@ -555,6 +596,14 @@ export async function getUserTitles(userId) {
   return (Array.isArray(data) ? data : []).map(normalizeTitle);
 }
 
+export async function getTitleAwardById(id) {
+  const res = await fetch(
+    `${API_BASE_URL}/user-titles/${encodeURIComponent(id)}`
+  );
+  if (res.status === 404) return null;
+  return normalizeTitle(await readJson(res));
+}
+
 export async function getUserRecords(userId) {
   const res = await fetch(
     `${API_BASE_URL}/users/${encodeURIComponent(userId)}/records`
@@ -657,6 +706,40 @@ export async function deletePostComment(postId, commentId) {
   );
 
   return readJson(res);
+}
+
+export async function getPostEvaluation(postId) {
+  const res = await fetch(
+    `${API_BASE_URL}/evaluations/posts/${encodeURIComponent(postId)}`
+  );
+  return normalizeEvaluation(await readJson(res));
+}
+
+export async function requestPostEvaluation(postId) {
+  const res = await fetch(
+    `${API_BASE_URL}/evaluations/posts/${encodeURIComponent(postId)}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+    }
+  );
+  const data = await readJson(res);
+
+  return {
+    ...data,
+    evaluation: normalizeEvaluation(data.evaluation ?? data),
+  };
+}
+
+export async function getTournamentEvaluations(tournamentId) {
+  const res = await fetch(
+    `${API_BASE_URL}/evaluations/tournaments/${encodeURIComponent(tournamentId)}`
+  );
+  const data = await readJson(res);
+  return (Array.isArray(data) ? data : []).map(normalizeEvaluation);
 }
 export async function getTags(sort = "popular") {
   const query = sort ? `?sort=${encodeURIComponent(sort)}` : "";

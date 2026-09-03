@@ -5,6 +5,7 @@ import {
   deletePostComment,
   getPostById,
   getPostComments,
+  getPostEvaluation,
   getStoredUser,
   togglePostLike,
 } from "../services/api";
@@ -15,6 +16,7 @@ export default function PostDetail() {
   const { id } = useParams();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
+  const [evaluation, setEvaluation] = useState(null);
   const [commentBody, setCommentBody] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
@@ -22,10 +24,15 @@ export default function PostDetail() {
   const currentUser = getStoredUser();
 
   useEffect(() => {
-    Promise.all([getPostById(id), getPostComments(id)])
-      .then(([postData, commentData]) => {
+    Promise.all([
+      getPostById(id),
+      getPostComments(id),
+      getPostEvaluation(id).catch(() => null),
+    ])
+      .then(([postData, commentData, evaluationData]) => {
         setPost(postData);
         setComments(commentData);
+        setEvaluation(evaluationData);
       })
       .catch((err) => {
         console.error("投稿詳細の取得に失敗しました:", err);
@@ -214,6 +221,23 @@ export default function PostDetail() {
           <span>💬 {post.comments}</span>
         </div>
       </article>
+
+      {evaluation && (
+        <section className="post-detail-evaluation">
+          <div>
+            <h2>評価</h2>
+            <span>{evaluation.status}</span>
+          </div>
+          <strong>
+            {evaluation.score == null ? "評価待ち" : `Score ${evaluation.score}`}
+          </strong>
+          <p>
+            {evaluation.feedback ||
+              evaluation.errorMessage ||
+              "評価結果を待っています。"}
+          </p>
+        </section>
+      )}
 
       <section className="post-detail-comments">
         <div className="post-detail-comments__head">

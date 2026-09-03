@@ -54,6 +54,78 @@
   margin-top: 4px;
 }
 
+.discover-recommended {
+  margin-bottom: 18px;
+}
+
+.discover-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.discover-section-head h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.discover-section-head span {
+  color: #7a4dff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.discover-contest-strip {
+  display: grid;
+  grid-auto-columns: minmax(150px, 45%);
+  grid-auto-flow: column;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.discover-contest-strip button {
+  min-width: 0;
+  padding: 0;
+  border: 1px solid #ebe7f2;
+  border-radius: 14px;
+  background: #fff;
+  color: #222;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.discover-contest-strip img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: block;
+  object-fit: cover;
+  background: #f0ebff;
+}
+
+.discover-contest-strip strong,
+.discover-contest-strip small {
+  display: block;
+  padding: 0 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.discover-contest-strip strong {
+  margin-top: 9px;
+  font-size: 12px;
+}
+
+.discover-contest-strip small {
+  margin: 4px 0 10px;
+  color: #777;
+  font-size: 10px;
+}
+
 .discover-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

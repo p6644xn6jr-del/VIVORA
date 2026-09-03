@@ -7,6 +7,7 @@ import {
   getTournamentRanking,
   getTournamentParticipants,
   getTournamentTitle,
+  getTournamentEvaluations,
   joinTournament,
   cancelTournamentParticipation,
   finalizeTournament,
@@ -25,6 +26,7 @@ function ContestDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const rankingRef = useRef(null);
+  const evaluationRef = useRef(null);
   const [contest, setContest] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [ranking, setRanking] = useState([]);
@@ -33,6 +35,7 @@ function ContestDetail() {
   const [currentUserRank, setCurrentUserRank] = useState(null);
   const [finalizeMessage, setFinalizeMessage] = useState("");
   const [pageMessage, setPageMessage] = useState("");
+  const [evaluations, setEvaluations] = useState([]);
 
   const loadParticipationState = async (tournamentId) => {
     const [currentUser, participants] = await Promise.all([
@@ -83,11 +86,26 @@ function ContestDetail() {
             : null
         );
 
+        if (contestData?.evaluationType === "ai") {
+          getTournamentEvaluations(tournamentId)
+            .then((evaluationData) => {
+              if (mounted) setEvaluations(evaluationData.slice(0, 5));
+            })
+            .catch((error) => {
+              console.error("AI評価一覧の取得に失敗しました:", error);
+              if (mounted) setEvaluations([]);
+            });
+        } else {
+          setEvaluations([]);
+        }
+
         if (location.state?.postedRecord) {
           setPageMessage("記録を投稿しました。最新ランキングを確認できます。");
           window.history.replaceState({}, "");
           setTimeout(() => {
-            rankingRef.current?.scrollIntoView({
+            const targetRef =
+              location.state?.focus === "evaluation" ? evaluationRef : rankingRef;
+            targetRef.current?.scrollIntoView({
               behavior: "smooth",
               block: "start",
             });
@@ -275,14 +293,70 @@ function ContestDetail() {
 
       <section className="contest-detail-card contest-evaluation-card">
         <h2>評価方法</h2>
-        <p>
-          {contest.direction === "closest"
-            ? `目標 ${contest.target ?? "—"}${contest.unit ?? ""} に最も近い記録が上位です。`
-            : contest.direction === "lowest"
-              ? `記録が小さいほど上位です。単位: ${contest.unit || "未設定"}`
-              : `記録が大きいほど上位です。単位: ${contest.unit || "未設定"}`}
-        </p>
+        {contest.evaluationType === "ai" ? (
+          <>
+            <p>投稿画像をAIで評価し、スコアが高いほど上位です。</p>
+            <dl className="contest-evaluation-detail">
+              <div>
+                <dt>評価基準</dt>
+                <dd>{contest.aiCriteria || "評価基準は準備中です。"}</dd>
+              </div>
+              <div>
+                <dt>スコア範囲</dt>
+                <dd>
+                  {contest.aiScoreMin} - {contest.aiScoreMax}
+                  {contest.unit || "点"}
+                </dd>
+              </div>
+            </dl>
+          </>
+        ) : contest.evaluationType === "human_vote" ? (
+          <p>みんなの投票によって順位を決める予定の大会です。</p>
+        ) : (
+          <p>
+            {contest.direction === "closest"
+              ? `目標 ${contest.target ?? "—"}${contest.unit ?? ""} に最も近い記録が上位です。`
+              : contest.direction === "lowest"
+                ? `記録が小さいほど上位です。単位: ${contest.unit || "未設定"}`
+                : `記録が大きいほど上位です。単位: ${contest.unit || "未設定"}`}
+          </p>
+        )}
       </section>
+
+      {contest.evaluationType === "ai" && (
+        <section className="contest-detail-card contest-ai-status-card" ref={evaluationRef}>
+          <div className="contest-detail-section-head">
+            <h2>AI評価状況</h2>
+            <small>{evaluations.length}件</small>
+          </div>
+
+          {evaluations.length > 0 ? (
+            <div className="contest-ai-status-list">
+              {evaluations.map((evaluation) => (
+                <article className="contest-ai-status-row" key={evaluation.id}>
+                  <div>
+                    <strong>
+                      {evaluation.score == null
+                        ? "評価待ち"
+                        : `${evaluation.score}${contest.unit || "点"}`}
+                    </strong>
+                    <span>{evaluation.status}</span>
+                  </div>
+                  <p>
+                    {evaluation.feedback ||
+                      evaluation.errorMessage ||
+                      "AI評価の結果を待っています。"}
+                  </p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="contest-detail-no-data">
+              まだAI評価対象の投稿はありません。
+            </p>
+          )}
+        </section>
+      )}
 
       {/* 開催予定はここで終了 */}
       {isUpcoming ? (

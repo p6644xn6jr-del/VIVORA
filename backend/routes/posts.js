@@ -95,18 +95,48 @@ router.post("/", authenticateUser, async (req, res) => {
   }
 
   // 大会投稿
-  if (
-    type === "tournament" &&
-    (
-      !tournamentId ||
-      record === undefined ||
-      record === null ||
-      record === ""
-    )
-  ) {
-    return res.status(400).json({
-      message: "大会と記録を入力してください"
-    });
+  let tournament = null;
+
+  if (type === "tournament") {
+    if (!tournamentId) {
+      return res.status(400).json({
+        message: "大会を入力してください"
+      });
+    }
+
+    const { data: tournamentData, error: tournamentError } = await supabase
+      .from("tournaments")
+      .select("*")
+      .eq("id", Number(tournamentId))
+      .maybeSingle();
+
+    if (tournamentError) {
+      return res.status(500).json({
+        message: "大会情報の取得に失敗しました",
+        error: tournamentError.message
+      });
+    }
+
+    if (!tournamentData) {
+      return res.status(404).json({
+        message: "大会が見つかりません"
+      });
+    }
+
+    tournament = tournamentData;
+
+    if (
+      (tournament.evaluation_type ?? "objective") === "objective" &&
+      (
+        record === undefined ||
+        record === null ||
+        record === ""
+      )
+    ) {
+      return res.status(400).json({
+        message: "大会と記録を入力してください"
+      });
+    }
   }
 
   const { data, error } = await supabase
@@ -120,7 +150,10 @@ router.post("/", authenticateUser, async (req, res) => {
         type: type,
         challenge_id: type === "challenge" ? challengeId : null,
         tournament_id: type === "tournament" ? tournamentId : null,
-        record: type === "tournament" ? record : null,
+        record:
+          type === "tournament" && (tournament?.evaluation_type ?? "objective") === "objective"
+            ? record
+            : null,
         verified: false,
         media: media || []
       }

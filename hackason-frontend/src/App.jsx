@@ -11,6 +11,7 @@ import Post from "./pages/Post";
 import PostDetail from "./pages/PostDetail";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
+import TitleDetail from "./pages/TitleDetail";
 import TagDetail from "./pages/TagDetail";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -38,6 +39,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:id" element={<Profile />} />
           <Route path="/users/:id" element={<Profile />} />
+          <Route path="/titles/:id" element={<TitleDetail />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

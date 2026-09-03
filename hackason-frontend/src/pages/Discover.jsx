@@ -1,9 +1,18 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PostCard from "../components/PostCard";
+import { getRecommendedContests } from "../services/api";
 import "./Discover.css";
 
 export default function Discover() {
   const navigate = useNavigate();
+  const [recommendedContests, setRecommendedContests] = useState([]);
+
+  useEffect(() => {
+    getRecommendedContests()
+      .then((data) => setRecommendedContests(Array.isArray(data) ? data : []))
+      .catch(() => setRecommendedContests([]));
+  }, []);
 
   return (
     <main className="discover-page sm-page">
@@ -26,6 +35,29 @@ export default function Discover() {
       </header>
 
       <section className="discover-content">
+        {recommendedContests.length > 0 && (
+          <section className="discover-recommended">
+            <div className="discover-section-head">
+              <h2>おすすめ大会</h2>
+              <span>あなた向け</span>
+            </div>
+
+            <div className="discover-contest-strip">
+              {recommendedContests.map((contest) => (
+                <button
+                  type="button"
+                  key={contest.id}
+                  onClick={() => navigate(`/contests/detail/${contest.id}`)}
+                >
+                  <img src={contest.image} alt="" />
+                  <strong>{contest.title}</strong>
+                  <small>{contest.recommendationReason ?? "おすすめ大会"}</small>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
         <div className="discover-tabs" role="tablist" aria-label="こだわりの投稿">
           <button
             type="button"

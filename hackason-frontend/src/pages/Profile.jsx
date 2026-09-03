@@ -126,6 +126,8 @@ function Profile() {
     );
   }
 
+  const featuredTitle = titles[0] ?? null;
+
   return (
     <main className="profile-page">
       <header className="profile-page__header">
@@ -180,6 +182,21 @@ function Profile() {
         </div>
       </section>
 
+      {featuredTitle && (
+        <button
+          type="button"
+          className="profile-featured-title"
+          onClick={() => navigate(`/titles/${featuredTitle.id}`)}
+        >
+          <img src={featuredTitle.imageUrl} alt="" />
+          <div>
+            <span>代表称号</span>
+            <strong>{featuredTitle.name}</strong>
+            <small>{featuredTitle.tournamentTitle || "大会称号"}</small>
+          </div>
+        </button>
+      )}
+
       <section className="profile-titles">
         <div className="profile-section-heading">
           <h2>{isOwnProfile ? "獲得称号" : `${user.name}の称号`}</h2>
@@ -193,11 +210,7 @@ function Profile() {
                 type="button"
                 className="profile-title-card"
                 key={title.id}
-                onClick={() =>
-                  title.tournamentId
-                    ? navigate(`/contests/detail/${title.tournamentId}`)
-                    : null
-                }
+                onClick={() => navigate(`/titles/${title.id}`)}
               >
                 <img src={title.imageUrl} alt="" />
                 <strong>{title.name}</strong>

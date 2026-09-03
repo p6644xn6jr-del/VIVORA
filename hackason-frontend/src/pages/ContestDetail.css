@@ -253,6 +253,68 @@
   line-height: 1.7;
 }
 
+.contest-evaluation-detail {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+}
+
+.contest-evaluation-detail div {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #faf8ff;
+}
+
+.contest-evaluation-detail dt {
+  margin-bottom: 4px;
+  color: var(--cd-purple);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.contest-evaluation-detail dd {
+  margin: 0;
+  color: #555;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.contest-ai-status-list {
+  display: grid;
+  gap: 10px;
+}
+
+.contest-ai-status-row {
+  padding: 12px;
+  border: 1px solid #ece7f6;
+  border-radius: 12px;
+  background: #faf8ff;
+}
+
+.contest-ai-status-row div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.contest-ai-status-row strong {
+  font-size: 14px;
+}
+
+.contest-ai-status-row span {
+  color: #7a4dff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.contest-ai-status-row p {
+  margin: 7px 0 0;
+  color: #666;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
 .contest-finalize-card button {
   width: 100%;
   min-height: 42px;

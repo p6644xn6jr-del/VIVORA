@@ -2,6 +2,8 @@ const express = require("express");
 const { createClient } = require("@supabase/supabase-js");
 const authenticateUser = require("../middleware/auth");
 const { buildRanking } = require("../utils/ranking");
+const { getTournamentStatus } = require("../utils/tournamentStatus");
+const { buildTitleAwardRows, selectTitleWinners } = require("../utils/titleAwards");
 require("dotenv").config();
 
 const router = express.Router();
@@ -72,21 +74,6 @@ async function getTournamentRanking(tournament) {
   }
 
   return buildRanking(records ?? [], tournament);
-}
-
-function getTournamentStatus(tournament) {
-  const now = Date.now();
-  const start = tournament?.start_at
-    ? new Date(tournament.start_at).getTime()
-    : Number.NEGATIVE_INFINITY;
-  const end = tournament?.end_at
-    ? new Date(tournament.end_at).getTime()
-    : Number.POSITIVE_INFINITY;
-
-  if (!Number.isNaN(start) && now < start) return "upcoming";
-  if (!Number.isNaN(end) && now > end) return "finished";
-
-  return "active";
 }
 
 async function countTournamentParticipants(tournamentId, fallback = 0) {
@@ -467,7 +454,7 @@ router.post("/:id/finalize", authenticateUser, async (req, res) => {
 
   try {
     const ranking = await getTournamentRanking(tournament);
-    const winners = ranking.filter((item) => item.rank === 1);
+    const winners = selectTitleWinners(ranking);
 
     if (!winners.length) {
       return res.status(400).json({
@@ -491,13 +478,7 @@ router.post("/:id/finalize", authenticateUser, async (req, res) => {
       });
     }
 
-    const awards = winners.map((winner) => ({
-      user_id: winner.userId,
-      title_id: title.id,
-      tournament_id: tournamentId,
-      record_id: winner.recordId,
-      rank: winner.rank,
-    }));
+    const awards = buildTitleAwardRows(winners, title, tournamentId);
 
     const { data: userTitles, error: awardError } = await supabase
       .from("user_titles")

@@ -7,6 +7,7 @@ import {
   getContests,
   getCurrentUser,
   joinTournament,
+  requestPostEvaluation,
   uploadPostMedia,
 } from "../services/api";
 
@@ -262,8 +263,21 @@ function Post() {
         return;
       }
 
-      if (postType === "大会" && !Number.isFinite(Number(recordScore))) {
+      const isObjectiveTournament =
+        postType === "大会" &&
+        (selectedContest?.evaluationType ?? "objective") === "objective";
+      const isAiTournament =
+        postType === "大会" &&
+        selectedContest?.evaluationType === "ai";
+
+      if (isObjectiveTournament && !Number.isFinite(Number(recordScore))) {
         window.alert("大会の記録を数値で入力してください。");
+        releaseSubmitLock();
+        return;
+      }
+
+      if (isAiTournament && !media.some((file) => file.type.startsWith("image/"))) {
+        window.alert("AI評価大会には画像を1件以上追加してください。");
         releaseSubmitLock();
         return;
       }
@@ -287,7 +301,7 @@ function Post() {
             : null,
 
         record:
-          postType === "大会"
+          isObjectiveTournament
             ? Number(recordScore)
             : null,
 
@@ -303,7 +317,7 @@ function Post() {
       }
 
       if (
-        postType === "大会" &&
+        isObjectiveTournament &&
         selectedContest?.id != null
       ) {
         await joinTournament(selectedContest.id);
@@ -333,6 +347,33 @@ function Post() {
           state: {
             postedRecord: true,
             focus: "ranking",
+            postId: savedPost.id,
+          },
+        });
+        return;
+      }
+
+      if (
+        isAiTournament &&
+        selectedContest?.id != null
+      ) {
+        try {
+          await requestPostEvaluation(savedPost.id);
+        } catch (evaluationError) {
+          console.error("AI評価開始に失敗しました:", evaluationError);
+          window.alert(
+            `投稿は保存されましたが、AI評価状態の保存に失敗しました。${evaluationError?.message ? `\n${evaluationError.message}` : ""}`
+          );
+          navigate(`/posts/${savedPost.id}`, { replace: true });
+          return;
+        }
+
+        window.alert("投稿しました。AI評価状態を大会詳細で確認できます。");
+        navigate(`/contests/detail/${selectedContest.id}`, {
+          replace: true,
+          state: {
+            postedRecord: true,
+            focus: "evaluation",
             postId: savedPost.id,
           },
         });
@@ -421,6 +462,7 @@ function Post() {
   const hasMedia = media.length > 0;
   const mainMedia = media[0];
   const extraMedia = media.slice(1);
+  const selectedEvaluationType = selectedContest?.evaluationType ?? "objective";
   const recordStep =
     selectedContest?.decimalPlaces > 0
       ? `0.${"0".repeat(selectedContest.decimalPlaces - 1)}1`
@@ -785,7 +827,7 @@ function Post() {
         </section>
       )}
 
-      {postType === "大会" && selectedContest && (
+      {postType === "大会" && selectedContest && selectedEvaluationType === "objective" && (
         <section className="post-option-section post-record-section">
           <div className="post-section-heading">
             <h2>記録を入力</h2>
@@ -809,6 +851,20 @@ function Post() {
             />
             <span>{selectedContest.unit || "記録"}</span>
           </label>
+        </section>
+      )}
+
+      {postType === "大会" && selectedContest && selectedEvaluationType === "ai" && (
+        <section className="post-option-section post-record-section">
+          <div className="post-section-heading">
+            <h2>AI評価</h2>
+            <span>画像から評価します</span>
+          </div>
+
+          <p className="post-ai-evaluation-note">
+            {selectedContest.aiCriteria ||
+              "この大会は投稿画像をもとにAI評価を行います。"}
+          </p>
         </section>
       )}
 

@@ -132,6 +132,46 @@
   border-top: 1px solid #eeeaf1;
 }
 
+.post-detail-evaluation {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #e9defd;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.post-detail-evaluation div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.post-detail-evaluation h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.post-detail-evaluation span {
+  color: #7a4dff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.post-detail-evaluation strong {
+  display: block;
+  margin-top: 9px;
+  color: #222;
+  font-size: 18px;
+}
+
+.post-detail-evaluation p {
+  margin: 7px 0 0;
+  color: #666;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
 .post-detail-like {
   display: inline-flex;
   align-items: center;
