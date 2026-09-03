@@ -85,6 +85,20 @@ async function syncCompletedEvaluationRecord(evaluation, tournament, post, exist
   return data;
 }
 
+async function attachEvaluationRecord(evaluationId, recordId) {
+  if (!recordId) return null;
+
+  const { data, error } = await supabase
+    .from("submission_evaluations")
+    .update({ record_id: recordId })
+    .eq("id", evaluationId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 router.get("/posts/:postId", async (req, res) => {
   const postId = Number(req.params.postId);
 
@@ -178,21 +192,12 @@ router.post("/posts/:postId", authenticateUser, async (req, res) => {
       record,
     });
     const payload = toEvaluationPayload(evaluation, post.tournaments, post, record);
-    const syncedRecord = await syncCompletedEvaluationRecord(
-      evaluation,
-      post.tournaments,
-      post,
-      record
-    );
 
-    const { data, error } = await supabase
+    const { data: savedEvaluation, error } = await supabase
       .from("submission_evaluations")
       .upsert(
         [
-          {
-            ...payload,
-            record_id: syncedRecord?.id ?? payload.record_id,
-          }
+          payload
         ],
         { onConflict: "post_id" }
       )
@@ -202,6 +207,16 @@ router.post("/posts/:postId", authenticateUser, async (req, res) => {
     if (error) {
       throw error;
     }
+
+    const syncedRecord = await syncCompletedEvaluationRecord(
+      evaluation,
+      post.tournaments,
+      post,
+      record
+    );
+    const data = syncedRecord?.id
+      ? await attachEvaluationRecord(savedEvaluation.id, syncedRecord.id)
+      : savedEvaluation;
 
     const statusCode =
       data.status === "completed" || data.status === "failed" ? 200 : 202;

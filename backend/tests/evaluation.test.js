@@ -44,7 +44,7 @@ test("AI evaluation is not fake-successful when provider is not configured", () 
     process.env.VIVORA_AI_PROVIDER = previousProvider;
   }
 
-  assert.equal(result.status, "not_configured");
+  assert.equal(result.status, "failed");
   assert.equal(result.score, null);
   assert.equal(result.errorCode, "AI_PROVIDER_NOT_CONFIGURED");
 });

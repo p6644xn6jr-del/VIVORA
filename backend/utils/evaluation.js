@@ -4,7 +4,6 @@ const EVALUATION_STATUSES = [
   "processing",
   "completed",
   "failed",
-  "not_configured",
 ];
 
 function normalizeEvaluationType(type) {
@@ -92,7 +91,7 @@ function evaluateSubmission({ tournament, post, record }) {
     if (!process.env.VIVORA_AI_PROVIDER) {
       return {
         evaluationType,
-        status: "not_configured",
+        status: "failed",
         provider,
         version,
         score: null,

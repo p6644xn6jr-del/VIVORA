@@ -115,7 +115,7 @@ create table if not exists public.submission_evaluations (
   evaluation_type text not null
     check (evaluation_type in ('objective', 'ai', 'human_vote')),
   status text not null default 'pending'
-    check (status in ('pending', 'processing', 'completed', 'failed', 'not_configured')),
+    check (status in ('pending', 'processing', 'completed', 'failed')),
   provider text,
   version text not null default 'v1',
   score numeric,
