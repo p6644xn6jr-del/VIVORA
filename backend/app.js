@@ -9,6 +9,7 @@ const tournamentRoutes = require("./routes/tournaments");
 const tagsRoutes = require("./routes/tags");
 const evaluationRoutes = require("./routes/evaluations");
 const recommendationRoutes = require("./routes/recommendations");
+const tournamentSeriesRoutes = require("./routes/tournamentSeries");
 const authenticateUser = require("./middleware/auth");
 const { buildRanking } = require("./utils/ranking");
 const { getTournamentStatus } = require("./utils/tournamentStatus");
@@ -68,6 +69,7 @@ app.use("/tournaments", tournamentRoutes);
 app.use("/tags", tagsRoutes);
 app.use("/evaluations", evaluationRoutes);
 app.use("/recommendations", recommendationRoutes);
+app.use("/tournament-series", tournamentSeriesRoutes);
 
 // ホーム
 app.get("/", (req, res) => {
@@ -276,6 +278,34 @@ app.get("/users/:id/featured-title", async (req, res) => {
     });
   }
 
+  const mapFeaturedTitle = (data) => {
+    if (!data) return null;
+
+    const userTitle = data.user_titles ?? data;
+
+    return {
+      userId: userTitle.user_id,
+      userTitleId: userTitle.id,
+      titleId: userTitle.title_id,
+      tournamentId: userTitle.tournament_id,
+      tournamentTitle: userTitle.tournaments?.title ?? "",
+      titleName: userTitle.titles?.name ?? "称号",
+      titleImageUrl: userTitle.titles?.image_url ?? "",
+      awardedAt: userTitle.awarded_at,
+      rank: userTitle.rank
+    };
+  };
+
+  const { data: featuredTitle } = await supabase
+    .from("user_featured_titles")
+    .select("*, user_titles(*, titles(*), tournaments(title, image_url))")
+    .eq("user_id", id)
+    .maybeSingle();
+
+  if (featuredTitle?.user_titles) {
+    return res.json(mapFeaturedTitle(featuredTitle));
+  }
+
   const { data, error } = await supabase
     .from("user_titles")
     .select("*, titles(*), tournaments(title, image_url)")
@@ -295,16 +325,63 @@ app.get("/users/:id/featured-title", async (req, res) => {
     return res.json(null);
   }
 
+  return res.json(mapFeaturedTitle(data));
+});
+
+app.put("/me/featured-title", authenticateUser, async (req, res) => {
+  const userTitleId = Number(req.body?.userTitleId);
+
+  if (!Number.isInteger(userTitleId)) {
+    return res.status(400).json({
+      message: "userTitleIdが不正です"
+    });
+  }
+
+  const { data: userTitle, error: userTitleError } = await supabase
+    .from("user_titles")
+    .select("id, user_id")
+    .eq("id", userTitleId)
+    .eq("user_id", req.userId)
+    .maybeSingle();
+
+  if (userTitleError) {
+    return res.status(500).json({
+      message: "称号の確認に失敗しました",
+      error: userTitleError.message
+    });
+  }
+
+  if (!userTitle) {
+    return res.status(404).json({
+      message: "自分の獲得称号が見つかりません"
+    });
+  }
+
+  const { data, error } = await supabase
+    .from("user_featured_titles")
+    .upsert(
+      [
+        {
+          user_id: req.userId,
+          user_title_id: userTitleId,
+          updated_at: new Date().toISOString(),
+        }
+      ],
+      { onConflict: "user_id" }
+    )
+    .select()
+    .single();
+
+  if (error) {
+    return res.status(500).json({
+      message: "代表称号の設定に失敗しました。manual migration 002 の適用が必要な可能性があります。",
+      error: error.message
+    });
+  }
+
   return res.json({
-    userId: data.user_id,
-    userTitleId: data.id,
-    titleId: data.title_id,
-    tournamentId: data.tournament_id,
-    tournamentTitle: data.tournaments?.title ?? "",
-    titleName: data.titles?.name ?? "称号",
-    titleImageUrl: data.titles?.image_url ?? "",
-    awardedAt: data.awarded_at,
-    rank: data.rank
+    message: "代表称号を設定しました",
+    featuredTitle: data
   });
 });
 

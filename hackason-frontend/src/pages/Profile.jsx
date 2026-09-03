@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getPosts,
+  getUserFeaturedTitle,
   getUserById,
   getUserRecords,
   getUserTitles,
@@ -28,6 +29,7 @@ function Profile() {
   const [user, setUser] = useState(null);
   const [postCount, setPostCount] = useState(null);
   const [titles, setTitles] = useState([]);
+  const [featuredTitle, setFeaturedTitle] = useState(null);
   const [records, setRecords] = useState([]);
   const [error, setError] = useState("");
   const [postType, setPostType] = useState("commitment");
@@ -51,8 +53,9 @@ function Profile() {
       getPosts({ userId: resolvedTargetId }),
       getUserTitles(resolvedTargetId),
       getUserRecords(resolvedTargetId),
+      getUserFeaturedTitle(resolvedTargetId).catch(() => null),
     ])
-      .then(([userData, posts, titleData, recordData]) => {
+      .then(([userData, posts, titleData, recordData, featuredTitleData]) => {
         if (!mounted) return;
 
         if (!userData) {
@@ -63,6 +66,7 @@ function Profile() {
         setUser(userData);
         setPostCount(Array.isArray(posts) ? posts.length : 0);
         setTitles(Array.isArray(titleData) ? titleData : []);
+        setFeaturedTitle(featuredTitleData ?? titleData?.[0] ?? null);
         setRecords(Array.isArray(recordData) ? recordData.slice(0, 3) : []);
       })
       .catch((err) => {
@@ -125,8 +129,6 @@ function Profile() {
       </main>
     );
   }
-
-  const featuredTitle = titles[0] ?? null;
 
   return (
     <main className="profile-page">

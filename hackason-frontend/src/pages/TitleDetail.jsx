@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getTitleAwardById } from "../services/api";
+import {
+  getStoredUser,
+  getTitleAwardById,
+  setFeaturedTitle,
+} from "../services/api";
 import "./TitleDetail.css";
 
 function TitleDetail() {
@@ -8,6 +12,8 @@ function TitleDetail() {
   const { id } = useParams();
   const [title, setTitle] = useState(null);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const currentUser = getStoredUser();
 
   useEffect(() => {
     let mounted = true;
@@ -65,6 +71,19 @@ function TitleDetail() {
     );
   }
 
+  const canFeature = Number(currentUser?.id) === Number(title.userId);
+
+  const handleFeature = async () => {
+    try {
+      setMessage("");
+      await setFeaturedTitle(title.id);
+      setMessage("代表称号に設定しました。");
+    } catch (err) {
+      console.error("代表称号の設定に失敗しました:", err);
+      setMessage(err.message || "代表称号の設定に失敗しました。");
+    }
+  };
+
   return (
     <main className="title-detail-page">
       <button
@@ -85,6 +104,18 @@ function TitleDetail() {
         <p>獲得称号</p>
         <h1>{title.name}</h1>
         <span>{title.description || "大会の結果として獲得した画像称号です。"}</span>
+
+        {canFeature && (
+          <button
+            type="button"
+            className="title-detail-feature-button"
+            onClick={handleFeature}
+          >
+            代表称号にする
+          </button>
+        )}
+
+        {message && <p className="title-detail-message">{message}</p>}
 
         <div className="title-detail-meta">
           <button

@@ -604,6 +604,39 @@ export async function getTitleAwardById(id) {
   return normalizeTitle(await readJson(res));
 }
 
+export async function setFeaturedTitle(userTitleId) {
+  const res = await fetch(`${API_BASE_URL}/me/featured-title`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ userTitleId }),
+  });
+
+  return readJson(res);
+}
+
+export async function getUserFeaturedTitle(userId) {
+  const res = await fetch(
+    `${API_BASE_URL}/users/${encodeURIComponent(userId)}/featured-title`
+  );
+  const data = await readJson(res);
+  if (!data) return null;
+
+  return {
+    id: data.userTitleId,
+    userId: data.userId,
+    titleId: data.titleId,
+    tournamentId: data.tournamentId,
+    tournamentTitle: data.tournamentTitle ?? "",
+    name: data.titleName ?? "称号",
+    imageUrl: data.titleImageUrl ?? "",
+    rank: data.rank,
+    awardedAt: data.awardedAt,
+  };
+}
+
 export async function getUserRecords(userId) {
   const res = await fetch(
     `${API_BASE_URL}/users/${encodeURIComponent(userId)}/records`
