@@ -1,10 +1,10 @@
 # Frontend Reference
 
-This document lists the Lab API and frontend files most relevant to the frontend handoff. It reflects the current code after `8961adb..HEAD`; do not assume endpoints or fields not listed here exist.
+この資料は、フロント担当への共有で特に重要なLab APIとfrontend filesをまとめたものです。内容は現在の`8961adb..HEAD`のコードに基づいています。ここに書かれていないendpointやfieldが存在すると仮定しないでください。
 
 ## P0-10 Tournament Title Image
 
-Purpose: show the image title/badge that can be earned from a tournament.
+目的: 大会で獲得できる称号/バッジ画像を大会詳細で表示する。
 
 Frontend files:
 
@@ -23,7 +23,7 @@ API:
 GET /tournaments/:id/title
 ```
 
-Auth: not required.
+Auth: 不要です。
 
 Main response fields:
 
@@ -52,12 +52,12 @@ rarity
 
 Empty/error behavior:
 
-- `404` or no title: `null` in `getTournamentTitle`.
-- UI displays: `この大会の称号画像はまだ設定されていません。`
+- `404`またはtitle未設定の場合、`getTournamentTitle`は`null`を返します。
+- UIでは`この大会の称号画像はまだ設定されていません。`を表示します。
 
 ## P0-11 Own Profile Title Images
 
-Purpose: show title images the logged-in user has earned.
+目的: ログインユーザーが獲得したtitle imagesを自分のProfileに表示する。
 
 Frontend files:
 
@@ -77,7 +77,7 @@ GET /users/:id/titles
 GET /users/:id/featured-title
 ```
 
-Auth: not required for display. The frontend uses the stored logged-in public `user_id` for own profile.
+Auth: 表示には不要です。自分のProfileでは、frontendが保存済みのpublic `user_id`を使います。
 
 Main title list response fields:
 
@@ -119,12 +119,12 @@ Featured title response fields:
 
 Empty/error behavior:
 
-- No titles: Profile displays `まだ獲得称号はありません。`
-- No featured title: API returns `null`; frontend falls back to first title when available.
+- titleがない場合、Profileでは`まだ獲得称号はありません。`を表示します。
+- featured titleがない場合、APIは`null`を返します。frontendは利用可能なtitleがあれば最初のtitleをfallback表示します。
 
 ## P0-12 Other User Profile Title Images
 
-Purpose: let another logged-in or non-logged-in viewer see a user's acquired title images.
+目的: ログイン中/未ログインに関係なく、他人のProfileでそのユーザーの獲得title imagesを表示する。
 
 Frontend files:
 
@@ -154,7 +154,7 @@ GET /users/:id/featured-title
 GET /user-titles/:id
 ```
 
-Auth: not required for display.
+Auth: 表示には不要です。
 
 Title detail response fields:
 
@@ -182,13 +182,13 @@ Title detail response fields:
 
 UI behavior:
 
-- Profile title cards navigate to `/titles/:id`.
-- Title detail displays title image, tournament, rank, score, awardee, and awarded date.
-- Awardee row navigates to `/profile/:userId`.
+- Profileのtitle cardsは`/titles/:id`へ遷移します。
+- Title detailではtitle image、tournament、rank、score、awardee、awarded dateを表示します。
+- Awardee rowは`/profile/:userId`へ遷移します。
 
 ## Set Featured Title
 
-Purpose: allow a user to choose a representative acquired title.
+目的: ユーザーが代表称号として表示するacquired titleを選べるようにする。
 
 Frontend:
 
@@ -211,13 +211,13 @@ Content-Type: application/json
 }
 ```
 
-Auth: required.
+Auth: 必須です。
 
 Important behavior:
 
-- The backend verifies the `user_titles.id` belongs to the authenticated user.
-- UI shows only a simple failure message, not migration/table/internal details.
-- Requires manual migration 002 for `user_featured_titles`.
+- Backendは、指定された`user_titles.id`が認証ユーザーのものか検証します。
+- UIではmigration/table/internal detailを出さず、シンプルな失敗messageを表示します。
+- `user_featured_titles`を使うため、manual migration 002が必要です。
 
 ## Tournament Ranking
 
@@ -227,7 +227,7 @@ API:
 GET /tournaments/:id/ranking
 ```
 
-Auth: not required.
+Auth: 不要です。
 
 Source:
 
@@ -256,11 +256,11 @@ imageUrl
 
 Rules:
 
-- `records` is the canonical score source.
-- Best record per user is used.
-- `highest`, `lowest`, and `closest` are supported.
-- Ties share the same rank.
-- `decimal_places` controls score display precision.
+- `records`がcanonical score sourceです。
+- userごとのbest recordを使います。
+- `highest`、`lowest`、`closest`をsupportします。
+- tieは同じrankになります。
+- `decimal_places`でscore display precisionを制御します。
 
 ## Finalize Results
 
@@ -271,13 +271,13 @@ POST /tournaments/:id/finalize
 Authorization: Bearer <access_token>
 ```
 
-Auth: required.
+Auth: 必須です。
 
 Permission:
 
-- `admin`: allowed.
-- `user`: `403`.
-- unauthenticated: `401`.
+- `admin`: allowed。
+- `user`: `403`。
+- unauthenticated: `401`。
 
 Frontend:
 
@@ -292,11 +292,11 @@ Backend:
 
 Behavior:
 
-- Uses ranking from `records`.
-- Selects all tied rank-1 users.
-- Upserts `user_titles` with `onConflict: user_id,title_id,tournament_id`.
-- Sets `tournaments.result_finalized_at`.
-- General users do not see the finalize button.
+- `records`からrankingを作ります。
+- 同率rank-1の全userを選びます。
+- `onConflict: user_id,title_id,tournament_id`で`user_titles`へupsertします。
+- `tournaments.result_finalized_at`を設定します。
+- General userにはfinalize buttonを表示しません。
 
 ## Admin/User Role
 
@@ -315,13 +315,13 @@ admin
 
 Frontend:
 
-- `getStoredUser` and `login` normalize role in `services/api.js`.
-- `ContestDetail.jsx` checks `currentUser.role === "admin"` before showing finalize.
+- `services/api.js`の`getStoredUser`と`login`がroleをnormalizeします。
+- `ContestDetail.jsx`は`currentUser.role === "admin"`でfinalize button表示を判定します。
 
 Backend:
 
-- `backend/middleware/auth.js` loads the profile and exposes `req.userRole`.
-- `backend/utils/admin.js` checks admin permission.
+- `backend/middleware/auth.js`がprofileを読み込み、`req.userRole`を設定します。
+- `backend/utils/admin.js`がadmin permissionを判定します。
 
 Manual migration:
 
@@ -331,7 +331,7 @@ backend/manual-migrations/004_admin_role_and_user_grants.sql
 
 ## Finished/Finalized Tournaments Are Read-Only
 
-Backend rejects these actions when a tournament is `finished` or has `result_finalized_at`:
+tournamentが`finished`、または`result_finalized_at`ありの場合、Backendは次の操作を拒否します。
 
 ```http
 POST /tournaments/:id/participants
@@ -347,9 +347,9 @@ Expected status:
 
 Frontend:
 
-- `ContestDetail.jsx` hides participation/posting actions after finish.
-- `Post.jsx` lists only active, non-finalized tournaments and also checks before submit.
-- Finished detail status says `閲覧専用`.
+- `ContestDetail.jsx`は終了後にparticipation/posting actionsを隠します。
+- `Post.jsx`はactiveかつnon-finalizedのtournamentsだけを一覧表示し、submit前にも確認します。
+- Finished detail statusでは`閲覧専用`と表示します。
 
 ## Media Upload For Posts
 
@@ -366,15 +366,15 @@ post-media
 
 Behavior:
 
-- Requires access token.
-- Uploads directly to Supabase Storage.
-- Gets a public URL.
-- Saves `media: [{ mediaType, mediaUrl }]` through `POST /posts`.
-- Maximum 5 media items.
+- access tokenが必要です。
+- Supabase Storageへfrontendから直接uploadします。
+- public URLを取得します。
+- `POST /posts`で`media: [{ mediaType, mediaUrl }]`を保存します。
+- 最大5件までです。
 
 ## AI Evaluation Frontend Notes
 
-The UI can request and display evaluation state, but a real AI provider is not connected.
+UIはevaluation stateをrequest/displayできますが、real AI providerは未接続です。
 
 API:
 
@@ -391,4 +391,4 @@ submission_evaluations = process/reasoning
 records = canonical ranking score
 ```
 
-Do not build ranking UI from `submission_evaluations.score`.
+Ranking UIを`submission_evaluations.score`から作らないでください。

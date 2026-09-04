@@ -6,230 +6,233 @@ Baseline:
 8961adb Initial VIVORA baseline
 ```
 
-This document is based on:
+この資料は、以下の実際のGit diffを根拠にしています。
 
 ```sh
 git diff --name-status 8961adb..HEAD
 git diff --stat 8961adb..HEAD
 ```
 
-At the time this document was created, the Lab implementation diff before adding these handoff documents changed 51 files with 5591 insertions and 280 deletions.
+この資料作成時点で、handoff documents追加前のLab実装差分は、51 files changed、5591 insertions、280 deletionsでした。
 
 ## A. Existing Baseline Files Changed
+
+baselineに存在していたファイルを、Labで変更したものです。フロント担当が比較するときは、この章を優先して読むと「元のチームコードから何が変わったか」を追いやすいです。
 
 ### `backend/app.js`
 
 Baseline role:
 
-- Express app setup.
-- Mounted auth, posts, challenges, dummy, tournaments, and tags routes.
-- Had `/users`, `/user/:id`, legacy `/signup` and `/login`.
-- Had an in-memory `/record` endpoint and a temporary `/ranking` endpoint.
+- Express app setup。
+- auth、posts、challenges、dummy、tournaments、tags routesのmount。
+- `/users`、`/user/:id`、legacy `/signup`、legacy `/login`。
+- in-memoryな`/record` endpointとtemporaryな`/ranking` endpoint。
 
 Lab changes:
 
-- Mounted `records`, `evaluations`, `recommendations`, and `tournament-series` routes.
-- Replaced legacy `/record` behavior with the real records route.
-- Added user title APIs:
+- `records`、`evaluations`、`recommendations`、`tournament-series` routesをmount。
+- legacy `/record` behaviorをreal records routeへ接続。
+- user title APIsを追加。
   - `GET /users/:id/titles`
   - `GET /me/titles`
   - `GET /user-titles/:id`
   - `GET /users/:id/featured-title`
   - `PUT /me/featured-title`
-- Added role normalization to user responses.
-- Added `scoreText` formatting for title records.
+- user responseにrole normalizationを追加。
+- title records用に`scoreText` formattingを追加。
 
 Reason:
 
-- Make profile/title MVP behavior concrete and connect titles to real users, tournaments, and records.
+- Profile/title MVP behaviorを具体化し、titlesをreal users、tournaments、recordsへ接続するため。
 
 Related features:
 
-- P0-11 own profile title images.
-- P0-12 other profile title images.
-- Representative title.
-- records canonical ranking.
+- P0-11 own profile title images。
+- P0-12 other profile title images。
+- Representative title。
+- records canonical ranking。
 
 Frontend reference value:
 
-- High. Use these response shapes for title/profile integration.
+- 高いです。title/profile integrationのresponse shape確認に使えます。
 
 Lab-only caution:
 
-- Uses broad Lab Data API access through `SUPABASE_ANON_KEY`; not production security.
+- `SUPABASE_ANON_KEY`経由の広いLab Data API accessを前提にしています。本番securityではありません。
 
 ### `backend/middleware/auth.js`
 
 Baseline role:
 
-- Verified Supabase access token.
-- Looked up `public.users.user_id`.
-- Set `req.authUser` and `req.userId`.
+- Supabase access tokenをverify。
+- `public.users.user_id`をlookup。
+- `req.authUser`と`req.userId`を設定。
 
 Lab changes:
 
-- Selects the full public user profile.
-- Sets `req.user`, `req.userId`, and `req.userRole`.
-- Normalizes unknown roles to `user`.
+- public user profile全体をselect。
+- `req.user`、`req.userId`、`req.userRole`を設定。
+- unknown roleを`user`へnormalize。
 
 Reason:
 
-- Backend routes need authenticated public user identity and admin/user role.
+- Backend routesでauthenticated public user identityとadmin/user roleが必要になったため。
 
 Related features:
 
-- Admin-only finalize.
-- User-owned featured title update.
+- Admin-only finalize。
+- User-owned featured title update。
 
 Frontend reference value:
 
-- Medium. Useful for understanding why frontend must send `Authorization: Bearer <access_token>`.
+- 中程度です。frontendが`Authorization: Bearer <access_token>`を送る理由の理解に使えます。
 
 Lab-only caution:
 
-- Role is a Lab reference design; production should harden role writes with RLS/server-only controls.
+- roleはLab用reference designです。本番ではRLS/server-only controlsでrole writeを強化してください。
 
 ### `backend/routes/tournaments.js`
 
 Baseline role:
 
-- Listed tournaments from Supabase.
-- Created tournaments with body-provided `created_by`.
-- Joined/cancelled participation with body-provided `userId`.
-- Built ranking from `posts.record`.
+- Supabaseからtournamentsをlist。
+- body-provided `created_by`でtournament作成。
+- body-provided `userId`でjoin/cancel participation。
+- `posts.record`からrankingを作成。
 
 Lab changes:
 
-- Requires authentication for tournament creation, join, cancel, and finalize.
-- Uses `req.userId`; frontend no longer sends userId for join/finalize.
-- Counts participants from `tournament_participants`.
-- Adds real status via `getTournamentStatus`.
-- Adds `GET /tournaments/popular`.
-- Adds `GET /tournaments/results/summary`.
-- Adds `GET /tournaments/:id/title`.
-- Adds `GET /tournaments/:id/ranking` from `records`.
-- Adds `POST /tournaments/:id/finalize`.
-- Awards titles to all tied rank-1 users.
-- Blocks new participation after `finished` or `result_finalized_at`.
+- tournament creation、join、cancel、finalizeにauthenticationを要求。
+- `req.userId`を使用し、frontendからjoin/finalize用のuserIdを送らない。
+- `tournament_participants`からparticipants countを算出。
+- `getTournamentStatus`によるreal statusを追加。
+- `GET /tournaments/popular`を追加。
+- `GET /tournaments/results/summary`を追加。
+- `GET /tournaments/:id/title`を追加。
+- `GET /tournaments/:id/ranking`を`records` sourceに変更。
+- `POST /tournaments/:id/finalize`を追加。
+- 同率rank-1の全userへtitlesを付与。
+- `finished`または`result_finalized_at`後のnew participationをblock。
 
 Reason:
 
-- Support the MVP flow from tournament discovery to participation, ranking, finalization, and title award.
+- tournament discoveryからparticipation、ranking、finalization、title awardまでのMVP flowを成立させるため。
 
 Related features:
 
-- P0 tournament list/detail/participation.
-- P0-10 title image on tournament detail.
-- Ranking.
-- Title award.
-- Admin/user.
-- Finished tournament read-only behavior.
+- P0 tournament list/detail/participation。
+- P0-10 title image on tournament detail。
+- Ranking。
+- Title award。
+- Admin/user。
+- Finished tournament read-only behavior。
 
 Frontend reference value:
 
-- Very high. This is the main tournament contract for frontend work.
+- 非常に高いです。frontend側のmain tournament contractです。
 
 Lab-only caution:
 
-- Finalize is implemented for Lab admin workflow only; production needs a stronger admin model.
+- finalizeはLab admin workflow用です。本番ではより強いadmin modelが必要です。
 
 ### `backend/routes/posts.js`
 
 Baseline role:
 
-- Created posts with request body `userId`.
-- Required tags for all post types.
-- Stored simple post fields.
+- request bodyの`userId`でpostsを作成。
+- 全post typeでtagsを必須扱い。
+- simple post fieldsを保存。
 
 Lab changes:
 
-- Requires access token for create/like/comment mutations.
-- Uses authenticated `req.userId`.
-- Supports `media` JSON with max 5 image/video items.
-- Supports tournament posts with `tournament_id`.
-- Allows tournament posts with empty tags so they do not pollute commitment tags.
-- Blocks tournament post creation after tournament finish/finalize.
-- Adds likes, likedByMe, comments count, and comment endpoints.
+- create/like/comment mutationsにaccess tokenを要求。
+- authenticated `req.userId`を使用。
+- max 5件のimage/video itemsを持つ`media` JSONをsupport。
+- `tournament_id`付きのtournament postsをsupport。
+- tournament postsではempty tagsを許可し、commitment tagsを汚さないように変更。
+- tournament finish/finalize後のtournament post creationをblock。
+- likes、likedByMe、comments count、comment endpointsを追加。
 
 Reason:
 
-- Make posts user-owned, support media, and connect tournament submissions without fake/dummy user IDs.
+- postsをuser-ownedにし、mediaとtournament submissionsをdummy user IDなしで接続するため。
 
 Related features:
 
-- P0 posting.
-- P0 image/video posting.
-- Tournament-post linkage.
-- Likes/comments P1.
-- Finished tournament read-only behavior.
+- P0 posting。
+- P0 image/video posting。
+- Tournament-post linkage。
+- Likes/comments P1。
+- Finished tournament read-only behavior。
 
 Frontend reference value:
 
-- High for `Post.jsx`, `PostCard.jsx`, and post detail.
+- 高いです。`Post.jsx`、`PostCard.jsx`、post detailの接続確認に使えます。
 
 Lab-only caution:
 
-- Storage upload is done directly by frontend with anon key and authenticated JWT; production policies should be reviewed.
+- Storage uploadはfrontendがanon keyとauthenticated JWTで直接行います。本番ではpolicy設計を見直してください。
 
 ### `backend/routes/tags.js`
 
 Baseline role:
 
-- Aggregated tags from `posts.tags`.
+- `posts.tags`からtagsをaggregate。
 
 Lab changes:
 
-- Ignores default `こだわり`.
-- Ignores `大会`.
-- Ignores tournament posts for popular commitment tags.
+- default `こだわり`を除外。
+- `大会`を除外。
+- tournament postsをpopular commitment tagsから除外。
 
 Reason:
 
-- Prevent tournament activity from appearing as `#大会` in the Home commitment tag area.
+- tournament activityがHomeのcommitment tag areaに`#大会`として出ないようにするため。
 
 Related features:
 
-- Home feed and Discover.
+- Home feed。
+- Discover。
 
 Frontend reference value:
 
-- Medium. Useful for Home popular tag behavior.
+- 中程度です。Home popular tag behaviorの理解に使えます。
 
 Lab-only caution:
 
-- Tag UX is lightweight and not final product taxonomy.
+- tag UXは軽量なLab実装であり、final product taxonomyではありません。
 
 ### `backend/package.json`
 
 Baseline role:
 
-- Backend package metadata and dependencies.
+- Backend package metadataとdependencies。
 
 Lab changes:
 
-- Added/updated script support used by Lab tests.
+- Lab testsを実行するためのscript supportを追加/調整。
 
 Reason:
 
-- Run backend `node --test` checks for ranking, status, title awards, admin, result summary, and AI evaluation logic.
+- ranking、status、title awards、admin、result summary、AI evaluation logicを`node --test`で確認するため。
 
 Frontend reference value:
 
-- Low.
+- 低いです。
 
 Lab-only caution:
 
-- Do not treat package metadata wording as product direction.
+- package metadataの文言をproduct directionとして扱わないでください。
 
 ### Frontend `hackason-frontend/src/App.jsx`
 
 Baseline role:
 
-- Registered core routes for Home, Discover, Contest, ContestDetail, JoinedContests, Post, Notifications, Profile, TagDetail, Login, and Signup.
+- Home、Discover、Contest、ContestDetail、JoinedContests、Post、Notifications、Profile、TagDetail、Login、Signupのcore routesを登録。
 
 Lab changes:
 
-- Added routes:
+- routesを追加。
   - `/contests/detail/:id/posts`
   - `/posts/:id`
   - `/profile/:id`
@@ -238,273 +241,273 @@ Lab changes:
 
 Reason:
 
-- Enable tournament post lists, post details, other user profiles, and title detail navigation.
+- tournament post lists、post details、other user profiles、title detail navigationを有効にするため。
 
 Related features:
 
-- P0-11/P0-12.
-- Post detail.
-- Title detail.
+- P0-11/P0-12。
+- Post detail。
+- Title detail。
 
 Frontend reference value:
 
-- High for routing.
+- 高いです。routing確認に使えます。
 
 Lab-only caution:
 
-- Route names are reference only; align with team routing conventions before adopting.
+- route namesはreferenceです。チーム版へ導入する場合はteam routing conventionsに合わせてください。
 
 ### Frontend `hackason-frontend/src/pages/Contest.jsx`
 
 Baseline role:
 
-- Displayed active/upcoming/finished tournament tabs.
-- Used current contest list and joined contests.
-- Result tab contained dummy/fallback values including fake winners and `999` rank fallback.
+- active/upcoming/finished tournament tabsを表示。
+- current contest listとjoined contestsを使用。
+- Result tabにはfake winnersや`999` rank fallbackを含むdummy/fallback valuesがありました。
 
 Lab changes:
 
-- Connects result tab to `GET /tournaments/results/summary`.
-- Removes fake winners and fake rank fallback.
-- Displays real user title winners, real joined count, real title count, and real best rank.
+- Result tabを`GET /tournaments/results/summary`へ接続。
+- fake winnersとfake rank fallbackを削除。
+- real user title winners、real joined count、real title count、real best rankを表示。
 
 Reason:
 
-- Make result screen safe to show as reference implementation without dummy data.
+- dummy dataなしでreference implementationとして見せられるresult screenにするため。
 
 Related features:
 
-- Result display.
-- Title awards.
-- P0-11/P0-12 visibility context.
+- Result display。
+- Title awards。
+- P0-11/P0-12 visibility context。
 
 Frontend reference value:
 
-- Medium-high. Use it for data flow, but redesign can still be owned by frontend/design.
+- 中から高です。data flowは参考になりますが、visual redesignはfrontend/designの担当でよいです。
 
 Lab-only caution:
 
-- Result tab layout is not final UX.
+- Result tab layoutはfinal UXではありません。
 
 ### Frontend `hackason-frontend/src/pages/ContestDetail.jsx` and CSS
 
 Baseline role:
 
-- Displayed tournament detail, participation state, ranking, and submissions.
-- Join action navigated into post flow.
-- Did not show title award image or admin finalize.
+- tournament detail、participation state、ranking、submissionsを表示。
+- join actionからpost flowへ遷移。
+- title award imageやadmin finalizeは未表示。
 
 Lab changes:
 
-- Shows title image for the tournament.
-- Shows evaluation method, AI evaluation status, ranking with formatted scores, and current user rank.
-- Adds direct join/cancel and record posting actions for active tournaments.
-- Adds admin-only finalize button.
-- Hides participate/post actions after finish.
-- Shows finished/finalized tournaments as read-only.
+- tournamentに紐づくtitle imageを表示。
+- evaluation method、AI evaluation status、formatted scores付きranking、current user rankを表示。
+- active tournaments向けにdirect join/cancelとrecord posting actionsを追加。
+- admin-only finalize buttonを追加。
+- finish後はparticipate/post actionsを隠す。
+- finished/finalized tournamentsをread-only表示にする。
 
 Reason:
 
-- Validate the core MVP experience from detail -> participate -> post -> ranking -> title.
+- detail -> participate -> post -> ranking -> titleのcore MVP experienceを検証するため。
 
 Related features:
 
-- P0-10.
-- Ranking.
-- Finalize.
-- Admin/user.
-- Finished tournament blocking.
+- P0-10。
+- Ranking。
+- Finalize。
+- Admin/user。
+- Finished tournament blocking。
 
 Frontend reference value:
 
-- Very high for P0-10 and tournament flow.
+- 非常に高いです。P0-10とtournament flowの中心です。
 
 Lab-only caution:
 
-- Visual design is Lab validation UI, not final Figma-approved design.
+- visual designはLab validation UIであり、final Figma-approved designではありません。
 
 ### Frontend `hackason-frontend/src/pages/Post.jsx` and CSS
 
 Baseline role:
 
-- Post creation UI for commitment and tournament posts.
+- commitment postsとtournament posts用のpost creation UI。
 
 Lab changes:
 
-- Adds submit lock to prevent duplicate post/record creation.
-- Supports image/video media selection and upload.
-- Supports max 5 media items and video duration validation.
-- Handles objective tournament records and AI tournament media requirements separately.
-- For tournament posts, joins tournament, creates post, creates record for objective tournaments, then returns to tournament detail/ranking.
-- Lists only active, non-finalized tournaments for tournament posting.
-- Blocks submit if selected tournament is finished/finalized.
-- Stops tournament posts from sending `#大会` as a commitment tag.
+- duplicate post/record creationを防ぐsubmit lockを追加。
+- image/video media selectionとuploadをsupport。
+- max 5 media itemsとvideo duration validationをsupport。
+- objective tournament recordsとAI tournament media requirementsを分岐。
+- tournament postsではjoin、post作成、objective tournamentsのrecord作成を行い、成功後にtournament detail/rankingへ戻す。
+- activeかつnon-finalized tournamentsだけをtournament posting候補として表示。
+- selected tournamentがfinished/finalizedの場合、submit前にもblock。
+- tournament postsが`#大会`をcommitment tagとして送らないように変更。
 
 Reason:
 
-- Make tournament submission safe and connect it to records/ranking.
+- tournament submissionを安全にし、records/rankingへ接続するため。
 
 Related features:
 
-- P0 posting.
-- Image/video posting.
-- Tournament-record linkage.
-- Finished tournament blocking.
-- AI evaluation foundation.
+- P0 posting。
+- Image/video posting。
+- Tournament-record linkage。
+- Finished tournament blocking。
+- AI evaluation foundation。
 
 Frontend reference value:
 
-- Very high for posting flow.
+- 非常に高いです。posting flowの参考になります。
 
 Lab-only caution:
 
-- AI provider is not connected; AI tournament flow is a reference shell.
+- AI providerは未接続です。AI tournament flowはreference shellです。
 
 ### Frontend `hackason-frontend/src/pages/Profile.jsx` and CSS
 
 Baseline role:
 
-- Displayed profile basics and user posts.
+- profile basicsとuser postsを表示。
 
 Lab changes:
 
-- Loads user titles, featured title, and recent records.
-- Shows acquired title images.
-- Supports own and other profile routes.
-- Links title cards to title detail.
+- user titles、featured title、recent recordsをload。
+- acquired title imagesを表示。
+- own profileとother profile routesをsupport。
+- title cardsからtitle detailへlink。
 
 Reason:
 
-- Validate P0-11 and P0-12.
+- P0-11とP0-12を検証するため。
 
 Related features:
 
-- P0-11 own profile acquired title images.
-- P0-12 other profile acquired title images.
+- P0-11 own profile acquired title images。
+- P0-12 other profile acquired title images。
 
 Frontend reference value:
 
-- Very high for title display patterns.
+- 非常に高いです。title display patternの参考になります。
 
 Lab-only caution:
 
-- Future title equipping UX is not final.
+- Future title equipping UXはfinalではありません。
 
 ### Frontend `hackason-frontend/src/pages/TitleDetail.jsx` and CSS
 
 Baseline role:
 
-- This file did not exist in the baseline.
+- baselineには存在しないfileです。
 
 Lab change:
 
-- Added title detail page.
+- title detail pageを追加。
 
 Reason:
 
-- Allow users to inspect image-first title evidence: title image, tournament, rank, record, awardee, and awarded date.
+- image-first title evidenceとして、title image、tournament、rank、record、awardee、awarded dateを確認できるようにするため。
 
 Related features:
 
-- P0-11/P0-12.
-- Representative title.
+- P0-11/P0-12。
+- Representative title。
 
 Frontend reference value:
 
-- High.
+- 高いです。
 
 Lab-only caution:
 
-- Future title presentation/animation should be designed with frontend/design.
+- Future title presentation/animationはfrontend/designと相談して決めてください。
 
 ### Frontend `hackason-frontend/src/pages/PostDetail.jsx` and CSS
 
 Baseline role:
 
-- Displayed post detail.
+- post detailを表示。
 
 Lab changes:
 
-- Adds media carousel-style display.
-- Adds like/comment interactions.
-- Shows AI evaluation state when available.
+- media carousel-style displayを追加。
+- like/comment interactionsを追加。
+- availableな場合にAI evaluation stateを表示。
 
 Reason:
 
-- Support post review after tournament or AI submission.
+- tournament submissionやAI submissionの投稿確認を支えるため。
 
 Related features:
 
-- P1 post detail, comments, likes.
-- AI evaluation UX.
+- P1 post detail、comments、likes。
+- AI evaluation UX。
 
 Frontend reference value:
 
-- Medium.
+- 中程度です。
 
 Lab-only caution:
 
-- Comment/like UX is supporting behavior, not the core VIVORA value.
+- Comment/like UXはsupporting behaviorであり、VIVORA core valueではありません。
 
 ### Frontend `hackason-frontend/src/components/PostCard.jsx` and CSS
 
 Baseline role:
 
-- Rendered post cards in feeds.
+- feeds内のpost cardsをrender。
 
 Lab changes:
 
-- Uses `likedByMe`, likes, comments, media preview, and tournament links.
-- Shows tournament posts as tournament badges instead of commitment tags.
-- Links user/profile and post detail.
+- `likedByMe`、likes、comments、media preview、tournament linksを使用。
+- tournament postsをcommitment tagsではなくtournament badgesとして表示。
+- user/profileとpost detailへlink。
 
 Reason:
 
-- Make feed cards work with real post API and avoid `#大会` as a fake commitment tag.
+- real post APIと連携し、`#大会`をfake commitment tagとして出さないため。
 
 Related features:
 
-- Home feed.
-- Post detail.
-- Tournament post linkage.
+- Home feed。
+- Post detail。
+- Tournament post linkage。
 
 Frontend reference value:
 
-- Medium.
+- 中程度です。
 
 Lab-only caution:
 
-- Feed/recommendation behavior is not final product UX.
+- Feed/recommendation behaviorはfinal product UXではありません。
 
 ### Frontend `hackason-frontend/src/services/api.js`
 
 Baseline role:
 
-- Frontend API wrapper and data normalization.
+- Frontend API wrapperとdata normalization。
 
 Lab changes:
 
-- Adds access token handling.
-- Adds Supabase Storage media upload.
-- Adds tournament, ranking, result summary, title, featured title, records, comments, likes, recommendations, and evaluation API wrappers.
-- Normalizes score precision, title fields, role, status, and media fields.
-- Treats `result_finalized_at` as finished.
+- access token handlingを追加。
+- Supabase Storage media uploadを追加。
+- tournament、ranking、result summary、title、featured title、records、comments、likes、recommendations、evaluation API wrappersを追加。
+- score precision、title fields、role、status、media fieldsをnormalize。
+- `result_finalized_at`をfinished扱いにする。
 
 Reason:
 
-- Centralize Lab API contract for frontend pages.
+- frontend pagesから使うLab API contractを集約するため。
 
 Related features:
 
-- Most P0/P1 Lab features.
+- ほぼすべてのP0/P1 Lab features。
 
 Frontend reference value:
 
-- Very high. Start here when wiring frontend to backend.
+- 非常に高いです。frontendがbackendに接続するときは最初に見るべきfileです。
 
 Lab-only caution:
 
-- `API_BASE_URL` is hardcoded to `http://localhost:3000`; adapt before team integration.
+- `API_BASE_URL`は`http://localhost:3000`にhardcodedです。チーム統合時は調整してください。
 
 ### Other Changed Frontend Files
 
@@ -522,23 +525,25 @@ Files:
 
 Lab changes:
 
-- Discovery page shows recommended tournaments and commitment posts.
-- Login/signup handle access-token based auth flow.
-- Tag detail and eslint/package files were adjusted to support current Lab build/lint behavior.
+- Discovery pageでrecommended tournamentsとcommitment postsを表示。
+- Login/signupがaccess-token based auth flowを扱うように調整。
+- Tag detailとeslint/package filesを、現在のLab build/lint behaviorに合わせて調整。
 
 Reason:
 
-- Support surrounding flows needed to validate MVP behavior in a browser.
+- MVP behaviorをbrowserで検証するために必要な周辺flowを支えるため。
 
 Frontend reference value:
 
-- Medium to low, except auth pages if the team wants to compare login/signup UX.
+- 中から低です。ただしteamがlogin/signup UXを比較したい場合、auth pagesは参考になります。
 
 Lab-only caution:
 
-- Recommendations are a rule-based Lab feature, not final recommendation strategy.
+- Recommendationsはrule-based Lab featureであり、final recommendation strategyではありません。
 
 ## B. New Files Added In The Lab
+
+Labで新規追加したファイルです。baselineには存在しなかったため、チーム版へ持ち込む場合は責務や設計を比較してから判断してください。
 
 ### Database And Migrations
 
@@ -552,7 +557,7 @@ Files:
 
 Purpose:
 
-- Define the full Lab schema and incremental manual migrations for existing Lab Supabase environments.
+- full Lab schemaと、既存Lab Supabase向けのincremental manual migrationsを定義します。
 
 Major tables/fields:
 
@@ -572,11 +577,11 @@ Major tables/fields:
 
 Frontend reference value:
 
-- High for understanding API field availability.
+- 高いです。APIで利用できるfieldsを理解するために使えます。
 
 Lab-only caution:
 
-- RLS OFF and broad Lab GRANTs are explicitly not production security.
+- RLS OFFと広いLab GRANTsは、本番securityではありません。
 
 ### Backend Routes
 
@@ -589,20 +594,20 @@ Files:
 
 Purpose:
 
-- Move records out of in-memory storage.
-- Add AI evaluation state.
-- Add lightweight tournament recommendations.
-- Add tournament series foundation.
+- recordsをin-memory storageから切り離します。
+- AI evaluation stateを追加します。
+- lightweight tournament recommendationsを追加します。
+- tournament series foundationを追加します。
 
 Frontend reference value:
 
-- `records.js` and `evaluations.js`: high.
-- `recommendations.js` and `tournamentSeries.js`: medium/experimental.
+- `records.js`と`evaluations.js`: 高いです。
+- `recommendations.js`と`tournamentSeries.js`: 中程度/experimentalです。
 
 Lab-only caution:
 
-- AI provider is not connected.
-- Tournament series UX is incomplete.
+- AI providerは未接続です。
+- Tournament series UXは未完成です。
 
 ### Backend Utilities
 
@@ -617,15 +622,15 @@ Files:
 
 Purpose:
 
-- Keep ranking, status, title award, evaluation, admin, and result summary rules testable outside route handlers.
+- ranking、status、title award、evaluation、admin、result summary rulesをroute handlersから切り出し、testしやすくしています。
 
 Frontend reference value:
 
-- High for understanding behavior and edge cases.
+- 高いです。behaviorとedge casesの理解に使えます。
 
 Lab-only caution:
 
-- These are reference implementations. Production may need transaction boundaries, queues, and stricter authorization.
+- reference implementationです。本番ではtransaction boundaries、queues、stricter authorizationが必要になる可能性があります。
 
 ### Backend Tests
 
@@ -640,15 +645,15 @@ Files:
 
 Purpose:
 
-- Cover admin/finalize permission logic, AI evaluation status, ranking directions, title award idempotency, result summary empties, and finished/finalized tournament blocking.
+- admin/finalize permission logic、AI evaluation status、ranking directions、title award idempotency、result summary empties、finished/finalized tournament blockingをcoverします。
 
 Frontend reference value:
 
-- Medium. Useful as executable documentation for frontend expectations.
+- 中程度です。frontend expectationsを確認するexecutable documentationとして使えます。
 
 Lab-only caution:
 
-- They are unit-style tests, not full browser E2E.
+- unit-style testsであり、full browser E2Eではありません。
 
 ### Frontend Pages
 
@@ -659,55 +664,55 @@ Files:
 
 Purpose:
 
-- Show image-first title details and awardee profile linkage.
+- image-first title detailsとawardee profile linkageを表示します。
 
 Frontend reference value:
 
-- High for title/tournament submission references.
+- title/tournament submission referencesとして高いです。
 
 Lab-only caution:
 
-- Final visual design should be coordinated with frontend/design.
+- final visual designはfrontend/designと調整してください。
 
 ## Change Summary By Theme
 
 ### Authentication And Users
 
-- Baseline had auth routes and public user lookup.
-- Lab connects access tokens to backend mutations through `authenticateUser`.
-- Lab uses `public.users.user_id` as the app user ID.
-- Lab adds `role` for admin/user distinction.
+- baselineにはauth routesとpublic user lookupがありました。
+- Labでは`authenticateUser`を通じてaccess tokensをbackend mutationsへ接続しました。
+- Labではapp user IDとして`public.users.user_id`を使います。
+- Labではadmin/user distinction用に`role`を追加しました。
 
 ### Tournament Flow
 
-- Baseline had simple tournament CRUD and participation with body `userId`.
-- Lab uses authenticated participation, participant counts from `tournament_participants`, status, finished/finalized blocking, related posts, ranking, title images, and finalize.
+- baselineにはsimple tournament CRUDと、body `userId`によるparticipationがありました。
+- Labではauthenticated participation、`tournament_participants`由来のparticipants count、status、finished/finalized blocking、related posts、ranking、title images、finalizeを追加しました。
 
 ### Posts And Media
 
-- Baseline posts were simpler and user identity could be sent from frontend.
-- Lab posts use authenticated user identity and support media upload metadata.
-- Tournament posts no longer create commitment tags such as `#大会`.
+- baseline postsはよりsimpleで、user identityをfrontendから送れる構造でした。
+- Lab postsはauthenticated user identityを使い、media upload metadataをsupportします。
+- Tournament postsでは`#大会`のようなcommitment tagsを作らないようにしました。
 
 ### Records And Ranking
 
-- Baseline ranking used `posts.record`.
-- Lab ranking uses `records` as the canonical score source.
-- Supports `highest`, `lowest`, `closest`, best-per-user, ties, and decimal display precision.
+- baseline rankingは`posts.record`を使っていました。
+- Lab rankingは`records`をcanonical score sourceとして使います。
+- `highest`、`lowest`、`closest`、best-per-user、ties、decimal display precisionをsupportします。
 
 ### Titles
 
-- Baseline had no complete image-title flow.
-- Lab adds `titles`, `user_titles`, `user_featured_titles`, title detail, profile display, and finalize-award flow.
+- baselineにはcomplete image-title flowはありませんでした。
+- Labでは`titles`、`user_titles`、`user_featured_titles`、title detail、profile display、finalize-award flowを追加しました。
 
 ### AI Evaluation
 
-- Lab adds `submission_evaluations`.
-- AI evaluation stores process and reasoning.
-- Completed AI scores sync into `records`.
-- Real AI provider integration is not complete.
+- Labでは`submission_evaluations`を追加しました。
+- AI evaluationはprocessとreasoningを保存します。
+- Completed AI scoresは`records`へsyncします。
+- Real AI provider integrationは未完成です。
 
 ### Future Foundations
 
-- Tournament recommendations and tournament series exist as Lab foundations.
-- These are not final product features.
+- Tournament recommendationsとtournament seriesはLab foundationとして存在します。
+- これらはfinal product featuresではありません。
