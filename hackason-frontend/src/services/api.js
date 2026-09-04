@@ -55,6 +55,10 @@ function normalizeContest(contest) {
   };
 }
 
+function normalizeRole(role) {
+  return role === "admin" ? "admin" : "user";
+}
+
 export function formatScore(score, decimalPlaces = 0, unit = "") {
   const numericScore = Number(score);
   const places = Number(decimalPlaces);
@@ -134,7 +138,10 @@ function normalizeTitle(title) {
     rank: Number(title.rank ?? 1),
     score: title.score ?? null,
     unit: title.unit ?? "",
+    scoreText: title.scoreText ?? title.score_text ?? null,
     awardedAt: title.awardedAt ?? title.awarded_at ?? null,
+    awardeeName: title.awardeeName ?? title.awardee_name ?? "",
+    awardeeIcon: title.awardeeIcon ?? title.awardee_icon ?? "",
   };
 }
 
@@ -237,6 +244,7 @@ export function getStoredUser() {
       icon: user.icon ?? user.icon_url ?? "🙂",
       area: user.area ?? null,
       birthday: user.birthday ?? null,
+      role: normalizeRole(user.role),
     };
   } catch (error) {
     console.error("保存ユーザーの取得に失敗しました:", error);
@@ -264,7 +272,11 @@ export async function getCurrentUser() {
 export async function getUserById(id) {
   const res = await fetch(`${API_BASE_URL}/user/${encodeURIComponent(id)}`);
   if (res.status === 404) return null;
-  return readJson(res);
+  const user = await readJson(res);
+  return {
+    ...user,
+    role: normalizeRole(user?.role),
+  };
 }
 
 export async function getContests() {
@@ -299,6 +311,29 @@ export async function getContestById(id) {
   });
   if (res.status === 404) return null;
   return normalizeContest(await readJson(res));
+}
+
+export async function getTournamentResultSummary() {
+  const res = await fetch(`${API_BASE_URL}/tournaments/results/summary`, {
+    headers: getAuthHeaders(),
+  });
+  const data = await readJson(res);
+
+  return {
+    recentResults: (Array.isArray(data?.recentResults) ? data.recentResults : [])
+      .map(normalizeContest),
+    winners: Array.isArray(data?.winners) ? data.winners : [],
+    history: (Array.isArray(data?.history) ? data.history : [])
+      .map(normalizeContest),
+    stats: {
+      joinedCount: Number(data?.stats?.joinedCount ?? 0),
+      titleCount: Number(data?.stats?.titleCount ?? 0),
+      bestRank:
+        data?.stats?.bestRank == null
+          ? null
+          : Number(data.stats.bestRank),
+    },
+  };
 }
 
 export async function getTournamentRanking(tournamentId) {
@@ -545,7 +580,7 @@ export async function createPost(postDraft) {
     content: postDraft.content ?? "",
     // 画像がないテキスト投稿ではダミー画像を付けない。
     imageUrl: postDraft.imageUrl || null,
-    tags: tags.length ? tags : ["こだわり"],
+    tags: type === "tournament" ? [] : (tags.length ? tags : ["こだわり"]),
     type,
     tournamentId:
       type === "tournament"
@@ -853,6 +888,7 @@ export async function login(email, password) {
     icon: profile.icon ?? profile.icon_url ?? "🙂",
     area: profile.area ?? null,
     birthday: profile.birthday ?? null,
+    role: normalizeRole(profile.role),
   };
 
   localStorage.setItem("user", JSON.stringify(user));

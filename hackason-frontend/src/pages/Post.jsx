@@ -288,7 +288,7 @@ function Post() {
         imageUrl: "",
         media: [],
 
-        tags: postType === "大会" ? ["大会"] : tags,
+        tags: postType === "大会" ? [] : tags,
 
         type:
           postType === "大会"
@@ -317,7 +317,7 @@ function Post() {
       }
 
       if (
-        isObjectiveTournament &&
+        postType === "大会" &&
         selectedContest?.id != null
       ) {
         await joinTournament(selectedContest.id);
@@ -330,7 +330,7 @@ function Post() {
       });
 
       if (
-        postType === "大会" &&
+        isObjectiveTournament &&
         selectedContest?.id != null
       ) {
         savedTournamentPost = savedPost;

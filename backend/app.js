@@ -11,8 +11,9 @@ const evaluationRoutes = require("./routes/evaluations");
 const recommendationRoutes = require("./routes/recommendations");
 const tournamentSeriesRoutes = require("./routes/tournamentSeries");
 const authenticateUser = require("./middleware/auth");
-const { buildRanking } = require("./utils/ranking");
+const { buildRanking, formatScore } = require("./utils/ranking");
 const { getTournamentStatus } = require("./utils/tournamentStatus");
+const { normalizeRole } = require("./utils/admin");
 require("dotenv").config();
 
 const app = express();
@@ -126,7 +127,7 @@ app.post("/login", async (req, res) => {
 app.get("/users", async (req, res) => {
   const { data, error } = await supabase
     .from("users")
-    .select("user_id, display_name, email, area, icon_url, birthday, age_visibility, bio, is_private, favorite_genres, created_at");
+    .select("*");
 
   if (error) {
     console.error("ユーザー一覧取得エラー:", error);
@@ -147,6 +148,7 @@ app.get("/users", async (req, res) => {
     bio: user.bio,
     isPrivate: user.is_private,
     favoriteGenres: user.favorite_genres,
+    role: normalizeRole(user.role),
     createdAt: user.created_at
   })));
 });
@@ -162,7 +164,7 @@ app.get("/users/:id/titles", async (req, res) => {
 
   const { data, error } = await supabase
     .from("user_titles")
-    .select("*, titles(*), tournaments(title, image_url), records(score, unit)")
+    .select("*, titles(*), tournaments(title, image_url, decimal_places), records(score, unit)")
     .eq("user_id", id)
     .order("awarded_at", { ascending: false });
 
@@ -186,6 +188,14 @@ app.get("/users/:id/titles", async (req, res) => {
     recordId: item.record_id,
     score: item.records?.score ?? null,
     unit: item.records?.unit ?? "",
+    scoreText:
+      item.records?.score == null
+        ? null
+        : formatScore(
+            item.records.score,
+            item.tournaments,
+            item.records?.unit ?? item.tournaments?.unit ?? ""
+          ),
     rank: item.rank,
     awardedAt: item.awarded_at
   })));
@@ -194,7 +204,7 @@ app.get("/users/:id/titles", async (req, res) => {
 app.get("/me/titles", authenticateUser, async (req, res) => {
   const { data, error } = await supabase
     .from("user_titles")
-    .select("*, titles(*), tournaments(title, image_url), records(score, unit)")
+    .select("*, titles(*), tournaments(title, image_url, decimal_places), records(score, unit)")
     .eq("user_id", req.userId)
     .order("awarded_at", { ascending: false });
 
@@ -218,6 +228,14 @@ app.get("/me/titles", authenticateUser, async (req, res) => {
     recordId: item.record_id,
     score: item.records?.score ?? null,
     unit: item.records?.unit ?? "",
+    scoreText:
+      item.records?.score == null
+        ? null
+        : formatScore(
+            item.records.score,
+            item.tournaments,
+            item.records?.unit ?? item.tournaments?.unit ?? ""
+          ),
     rank: item.rank,
     awardedAt: item.awarded_at
   })));
@@ -234,7 +252,7 @@ app.get("/user-titles/:id", async (req, res) => {
 
   const { data, error } = await supabase
     .from("user_titles")
-    .select("*, titles(*), tournaments(title, image_url), records(score, unit)")
+    .select("*, titles(*), tournaments(title, image_url, decimal_places), records(score, unit), users(display_name, icon_url)")
     .eq("id", id)
     .maybeSingle();
 
@@ -264,7 +282,17 @@ app.get("/user-titles/:id", async (req, res) => {
     recordId: data.record_id,
     score: data.records?.score ?? null,
     unit: data.records?.unit ?? "",
+    scoreText:
+      data.records?.score == null
+        ? null
+        : formatScore(
+            data.records.score,
+            data.tournaments,
+            data.records?.unit ?? data.tournaments?.unit ?? ""
+          ),
     rank: data.rank,
+    awardeeName: data.users?.display_name ?? "",
+    awardeeIcon: data.users?.icon_url ?? "",
     awardedAt: data.awarded_at
   });
 });
@@ -373,8 +401,9 @@ app.put("/me/featured-title", authenticateUser, async (req, res) => {
     .single();
 
   if (error) {
+    console.error("代表称号の設定に失敗しました:", error);
     return res.status(500).json({
-      message: "代表称号の設定に失敗しました。manual migration 002 の適用が必要な可能性があります。",
+      message: "代表称号の設定に失敗しました",
       error: error.message
     });
   }
@@ -479,7 +508,7 @@ app.get("/user/:id", async (req, res) => {
 
   const { data, error } = await supabase
     .from("users")
-    .select("user_id, display_name, email, area, icon_url, birthday, age_visibility, bio, is_private, favorite_genres, created_at")
+    .select("*")
     .eq("user_id", id)
     .maybeSingle();
 
@@ -508,6 +537,7 @@ app.get("/user/:id", async (req, res) => {
     bio: data.bio,
     isPrivate: data.is_private,
     favoriteGenres: data.favorite_genres,
+    role: normalizeRole(data.role),
     createdAt: data.created_at
   });
 });

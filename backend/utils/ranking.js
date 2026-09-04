@@ -136,5 +136,6 @@ function buildRanking(records, tournament) {
 
 module.exports = {
   buildRanking,
+  formatScore,
   normalizeDirection,
 };

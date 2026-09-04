@@ -72,6 +72,10 @@ function TitleDetail() {
   }
 
   const canFeature = Number(currentUser?.id) === Number(title.userId);
+  const awardeeName = title.awardeeName || `ユーザー${title.userId ?? ""}`;
+  const awardedAtText = title.awardedAt
+    ? new Date(title.awardedAt).toLocaleDateString("ja-JP")
+    : "—";
 
   const handleFeature = async () => {
     try {
@@ -80,7 +84,7 @@ function TitleDetail() {
       setMessage("代表称号に設定しました。");
     } catch (err) {
       console.error("代表称号の設定に失敗しました:", err);
-      setMessage(err.message || "代表称号の設定に失敗しました。");
+      setMessage("代表称号の設定に失敗しました。");
     }
   };
 
@@ -134,17 +138,32 @@ function TitleDetail() {
           <div>
             <small>記録</small>
             <strong>
-              {title.score == null ? "—" : `${title.score}${title.unit ?? ""}`}
+              {title.score == null
+                ? "—"
+                : title.scoreText ?? `${title.score}${title.unit ?? ""}`}
             </strong>
           </div>
 
           <button
             type="button"
+            className="title-detail-awardee"
             onClick={() => navigate(`/profile/${title.userId}`)}
           >
             <small>獲得者</small>
-            <strong>ユーザーID {title.userId}</strong>
+            <span>
+              {title.awardeeIcon ? (
+                <img src={title.awardeeIcon} alt="" />
+              ) : (
+                <i>{awardeeName.slice(0, 1)}</i>
+              )}
+              <strong>{awardeeName} →</strong>
+            </span>
           </button>
+
+          <div>
+            <small>獲得日</small>
+            <strong>{awardedAtText}</strong>
+          </div>
         </div>
       </section>
     </main>

@@ -1,9 +1,11 @@
 const express = require("express");
 const { createClient } = require("@supabase/supabase-js");
 const authenticateUser = require("../middleware/auth");
-const { buildRanking } = require("../utils/ranking");
+const { buildRanking, formatScore } = require("../utils/ranking");
 const { getTournamentStatus } = require("../utils/tournamentStatus");
 const { buildTitleAwardRows, selectTitleWinners } = require("../utils/titleAwards");
+const { canFinalizeTournament } = require("../utils/admin");
+const { buildResultSummary } = require("../utils/resultSummary");
 require("dotenv").config();
 
 const router = express.Router();
@@ -107,6 +109,35 @@ async function addParticipantCounts(tournaments) {
   );
 }
 
+function toResultTournament(tournament, rankingItem = null) {
+  return {
+    ...tournament,
+    status: getTournamentStatus(tournament),
+    image: tournament.image_url ?? "",
+    participants: tournament.participantsCount ?? tournament.participants ?? 0,
+    myRank: rankingItem?.rank ?? null,
+    myBestScore: rankingItem?.scoreText ?? null,
+    myBestRecordId: rankingItem?.recordId ?? null,
+  };
+}
+
+async function getBestRankForUser(tournaments, userId) {
+  const ranks = [];
+
+  for (const tournament of tournaments) {
+    const ranking = await getTournamentRanking(tournament);
+    const userRank = ranking.find(
+      (item) => Number(item.userId) === Number(userId)
+    );
+
+    if (userRank?.rank) {
+      ranks.push(Number(userRank.rank));
+    }
+  }
+
+  return ranks.length ? Math.min(...ranks) : null;
+}
+
 // 大会一覧
 router.get("/", async (req, res) => {
   const { data, error } = await supabase
@@ -162,6 +193,134 @@ router.get("/popular", async (req, res) => {
   );
 
   return res.json(withCounts.slice(0, 10));
+});
+
+router.get("/results/summary", async (req, res) => {
+  const currentUserId = await getCurrentUserId(req);
+
+  try {
+    const { data: tournaments, error: tournamentsError } = await supabase
+      .from("tournaments")
+      .select("*")
+      .order("end_at", { ascending: false, nullsFirst: false });
+
+    if (tournamentsError) {
+      throw tournamentsError;
+    }
+
+    const finishedTournaments = await addParticipantCounts(
+      (tournaments ?? []).filter(
+        (tournament) => getTournamentStatus(tournament) === "finished"
+      )
+    );
+
+    let joinedRows = [];
+    let recentResults = [];
+    let titleCount = 0;
+    let bestRank = null;
+
+    if (currentUserId) {
+      const { data: joinedData, error: joinedError } = await supabase
+        .from("tournament_participants")
+        .select("*, tournaments(*)")
+        .eq("user_id", currentUserId)
+        .order("created_at", { ascending: false });
+
+      if (joinedError) {
+        throw joinedError;
+      }
+
+      joinedRows = joinedData ?? [];
+      const joinedFinished = joinedRows
+        .map((item) => item.tournaments)
+        .filter(
+          (tournament) =>
+            tournament && getTournamentStatus(tournament) === "finished"
+        );
+
+      recentResults = await Promise.all(
+        joinedFinished.slice(0, 3).map(async (tournament) => {
+          const participantsCount = await countTournamentParticipants(
+            tournament.id,
+            tournament.participants
+          );
+          const ranking = await getTournamentRanking(tournament);
+          const myRanking = ranking.find(
+            (item) => Number(item.userId) === Number(currentUserId)
+          );
+
+          return toResultTournament(
+            {
+              ...tournament,
+              participantsCount,
+            },
+            myRanking
+          );
+        })
+      );
+
+      const { count, error: titleCountError } = await supabase
+        .from("user_titles")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", currentUserId);
+
+      if (titleCountError) {
+        throw titleCountError;
+      }
+
+      titleCount = count ?? 0;
+      bestRank = await getBestRankForUser(joinedFinished, currentUserId);
+    }
+
+    const { data: titleAwards, error: titlesError } = await supabase
+      .from("user_titles")
+      .select("*, users(display_name, icon_url), titles(*), tournaments(*), records(score, unit)")
+      .order("awarded_at", { ascending: false })
+      .limit(10);
+
+    if (titlesError) {
+      throw titlesError;
+    }
+
+    return res.json(
+      buildResultSummary({
+        recentResults,
+        winners: (titleAwards ?? []).map((award) => ({
+          id: award.id,
+          userId: award.user_id,
+          userName: award.users?.display_name ?? "",
+          userIcon: award.users?.icon_url ?? "",
+          tournamentId: award.tournament_id,
+          tournamentTitle: award.tournaments?.title ?? "",
+          titleName: award.titles?.name ?? "",
+          titleImageUrl: award.titles?.image_url ?? "",
+          rank: award.rank,
+          score: award.records?.score ?? null,
+          unit: award.records?.unit ?? award.tournaments?.unit ?? "",
+          scoreText:
+            award.records?.score == null
+              ? null
+              : formatScore(
+                  award.records.score,
+                  award.tournaments,
+                  award.records?.unit ?? award.tournaments?.unit ?? ""
+                ),
+          awardedAt: award.awarded_at,
+        })),
+        history: finishedTournaments.slice(0, 5).map((tournament) =>
+          toResultTournament(tournament)
+        ),
+        joinedCount: joinedRows.length,
+        titleCount,
+        bestRank,
+      })
+    );
+  } catch (error) {
+    return res.status(500).json({
+      message: "大会結果サマリーの取得に失敗しました",
+      error: error.message,
+    });
+  }
 });
 
 // 大会作成
@@ -451,6 +610,12 @@ router.post("/:id/finalize", authenticateUser, async (req, res) => {
 
   const tournament = await getTournamentOr404(tournamentId, res);
   if (!tournament) return;
+
+  if (!canFinalizeTournament(req.user)) {
+    return res.status(403).json({
+      message: "大会結果を確定する権限がありません"
+    });
+  }
 
   try {
     const ranking = await getTournamentRanking(tournament);

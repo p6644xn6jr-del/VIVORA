@@ -16,15 +16,17 @@ router.get("/", async (req, res) => {
 
     const {data, error} = await supabase
 .from("posts")
-.select("tags");
+.select("tags, type");
 if (error) {
     return res.status(500).json({error: "タグの取得に失敗しました"});
 }
 const tagCounts ={};
 
 data.forEach((post) => {
+  if (post.type === "tournament") return;
+
   (post.tags || []).forEach((tag) => {
-  if (tag === "こだわり") return;
+  if (tag === "こだわり" || tag === "大会") return;
 
   tagCounts[tag] = (tagCounts[tag] || 0) + 1;
 });

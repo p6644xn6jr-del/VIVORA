@@ -5,6 +5,7 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
+const { normalizeRole } = require("../utils/admin");
 
 const authenticateUser = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -30,7 +31,7 @@ const authenticateUser = async (req, res, next) => {
 
   const { data: profile, error: profileError } = await supabase
     .from("users")
-    .select("user_id")
+    .select("*")
     .eq("id", user.id)
     .single();
 
@@ -41,7 +42,9 @@ const authenticateUser = async (req, res, next) => {
   }
 
   req.authUser = user;
+  req.user = profile;
   req.userId = profile.user_id;
+  req.userRole = normalizeRole(profile.role);
 
   next();
 };

@@ -14,6 +14,8 @@ create table if not exists public.users (
   bio text,
   is_private boolean not null default false,
   favorite_genres text[],
+  role text not null default 'user'
+    check (role in ('user', 'admin')),
   created_at timestamptz not null default now()
 );
 
@@ -190,6 +192,9 @@ create index if not exists user_titles_tournament_id_idx
 alter table public.tournaments
   add column if not exists result_finalized_at timestamptz;
 
+alter table public.users
+  add column if not exists role text not null default 'user';
+
 alter table public.tournaments
   add column if not exists decimal_places integer not null default 0;
 
@@ -225,6 +230,17 @@ create index if not exists tournaments_series_id_idx
 
 do $$
 begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.users'::regclass
+      and conname = 'users_role_check'
+  ) then
+    alter table public.users
+      add constraint users_role_check
+      check (role in ('user', 'admin'));
+  end if;
+
   if not exists (
     select 1
     from pg_constraint
@@ -298,7 +314,32 @@ create unique index if not exists tournament_participants_unique_user
 
 grant usage on schema public to anon, authenticated;
 
-grant select, insert, update, delete on table public.users to anon, authenticated;
+grant select, delete on table public.users to anon, authenticated;
+revoke insert, update on table public.users from anon, authenticated;
+grant insert (
+  id,
+  display_name,
+  email,
+  birthday,
+  age_visibility,
+  area,
+  icon_url,
+  profile,
+  bio,
+  is_private,
+  favorite_genres
+) on table public.users to anon, authenticated;
+grant update (
+  display_name,
+  birthday,
+  age_visibility,
+  area,
+  icon_url,
+  profile,
+  bio,
+  is_private,
+  favorite_genres
+) on table public.users to anon, authenticated;
 grant select, insert, update, delete on table public.tournaments to anon, authenticated;
 grant select, insert, update, delete on table public.tournament_series to anon, authenticated;
 grant select, insert, update, delete on table public.posts to anon, authenticated;

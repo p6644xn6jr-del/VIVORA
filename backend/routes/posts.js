@@ -35,12 +35,7 @@ router.post("/", authenticateUser, async (req, res) => {
   } = req.body;
 
   // 共通必須
-  if (
-    !content ||
-    !type ||
-    !Array.isArray(tags) ||
-    tags.length === 0
-  ) {
+  if (!content || !type || !Array.isArray(tags)) {
     return res.status(400).json({
       message: "入力してください"
     });
@@ -54,6 +49,12 @@ router.post("/", authenticateUser, async (req, res) => {
   ) {
     return res.status(400).json({
       message: "投稿タイプが正しくありません"
+    });
+  }
+
+  if (type !== "tournament" && tags.length === 0) {
+    return res.status(400).json({
+      message: "タグを入力してください"
     });
   }
 
@@ -146,7 +147,7 @@ router.post("/", authenticateUser, async (req, res) => {
         user_id: req.userId,
         content: content,
         image_url: imageUrl || null,
-        tags: tags,
+        tags: type === "tournament" ? [] : tags,
         type: type,
         challenge_id: type === "challenge" ? challengeId : null,
         tournament_id: type === "tournament" ? tournamentId : null,

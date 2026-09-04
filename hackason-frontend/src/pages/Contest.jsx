@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getContests, getJoinedContests } from "../services/api";
+import {
+  getContests,
+  getJoinedContests,
+  getTournamentResultSummary,
+} from "../services/api";
 import "./Contest.css";
 
 const STATUS = {
@@ -27,6 +31,7 @@ function Contest() {
   );
   const [contests, setContests] = useState([]);
   const [joined, setJoined] = useState([]);
+  const [resultSummary, setResultSummary] = useState(null);
 
   useEffect(() => {
     Promise.all([getContests(), getJoinedContests()])
@@ -38,6 +43,17 @@ function Contest() {
         console.error("大会データの取得に失敗しました:", error);
       });
   }, []);
+
+  useEffect(() => {
+    if (status !== STATUS.finished) return;
+
+    getTournamentResultSummary()
+      .then(setResultSummary)
+      .catch((error) => {
+        console.error("大会結果サマリーの取得に失敗しました:", error);
+        setResultSummary(null);
+      });
+  }, [status]);
   const visibleContests = contests.filter((contest) => contest.status === status);
 
   const changeStatus = (nextStatus) => {
@@ -334,9 +350,14 @@ function Contest() {
   };
 
   const renderResults = () => {
-    const recent = visibleContests.slice(0, 2);
-    const winners = visibleContests.slice(0, 2);
-    const history = visibleContests.slice(2, 5);
+    const recent = resultSummary?.recentResults ?? [];
+    const winners = resultSummary?.winners ?? [];
+    const history = resultSummary?.history ?? visibleContests.slice(0, 5);
+    const stats = resultSummary?.stats ?? {
+      joinedCount: 0,
+      titleCount: 0,
+      bestRank: null,
+    };
 
     if (visibleContests.length === 0) {
       return (
@@ -355,7 +376,7 @@ function Contest() {
           </div>
 
           <div className="result-list">
-            {recent.map((contest, index) => (
+            {recent.length > 0 ? recent.map((contest) => (
               <button
                 type="button"
                 className="result-card"
@@ -374,7 +395,7 @@ function Contest() {
                   <h3>{contest.title}</h3>
 
                   <p className="result-rank">
-                    <strong>{contest.myRank ?? index + 1}</strong>
+                    <strong>{contest.myRank ?? "—"}</strong>
                     <span>
                       位 / {contest.participants ?? 0}人
                     </span>
@@ -395,7 +416,11 @@ function Contest() {
                   <b>›</b>
                 </div>
               </button>
-            ))}
+            )) : (
+              <div className="contest-empty">
+                まだ自分の大会結果はありません。
+              </div>
+            )}
           </div>
         </section>
 
@@ -406,29 +431,32 @@ function Contest() {
           </div>
 
           <div className="winner-grid">
-            {winners.map((contest, index) => (
+            {winners.length > 0 ? winners.map((winner) => (
               <button
                 type="button"
                 className="winner-card"
-                key={`winner-${contest.id}`}
-                onClick={() => goDetail(contest.id)}
+                key={`winner-${winner.id}`}
+                onClick={() => navigate(`/titles/${winner.id}`)}
               >
-                <div className="winner-rank">1</div>
-                <img src={contest.image} alt="" />
-                <h3>{contest.title}</h3>
+                <div className="winner-rank">{winner.rank ?? 1}</div>
+                <img src={winner.titleImageUrl} alt="" />
+                <h3>{winner.tournamentTitle}</h3>
 
                 <span className="winner-user">
-                  @{contest.winnerName ??
-                    (index === 0 ? "egg_master" : "just_one")}
+                  {winner.userName || "受賞者"}
                 </span>
 
                 <p>
-                  {contest.winnerScore ??
-                    contest.myBestScore ??
-                    "—"}
+                  {winner.score == null
+                    ? winner.titleName || "称号獲得"
+                    : winner.scoreText ?? `${winner.score}${winner.unit ?? ""}`}
                 </p>
               </button>
-            ))}
+            )) : (
+              <div className="contest-empty">
+                まだ受賞者はいません。
+              </div>
+            )}
           </div>
         </section>
 
@@ -465,7 +493,7 @@ function Contest() {
           <div>
             <span>参加大会</span>
             <strong>
-              {joined.length + visibleContests.length}
+              {stats.joinedCount}
             </strong>
             <small>回</small>
           </div>
@@ -473,9 +501,7 @@ function Contest() {
           <div>
             <span>獲得称号</span>
             <strong>
-              {visibleContests.filter(
-                (contest) => contest.winnerName
-              ).length}
+              {stats.titleCount}
             </strong>
             <small>個</small>
           </div>
@@ -483,11 +509,7 @@ function Contest() {
           <div>
             <span>ベスト順位</span>
             <strong>
-              {Math.min(
-                ...visibleContests
-                  .map((contest) => contest.myRank ?? 999)
-                  .concat([999])
-              )}
+              {stats.bestRank ?? "—"}
             </strong>
             <small>位</small>
           </div>

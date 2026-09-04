@@ -36,6 +36,7 @@ function ContestDetail() {
   const [finalizeMessage, setFinalizeMessage] = useState("");
   const [pageMessage, setPageMessage] = useState("");
   const [evaluations, setEvaluations] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const loadParticipationState = async (tournamentId) => {
     const [currentUser, participants] = await Promise.all([
@@ -77,6 +78,7 @@ function ContestDetail() {
         setSubmissions(Array.isArray(posts) ? posts.slice(0, 4) : []);
         setRanking(Array.isArray(rankingData) ? rankingData.slice(0, 10) : []);
         setTitleAward(titleData ?? contestData?.titleAward ?? null);
+        setCurrentUser(participation?.currentUser ?? null);
         setIsParticipating(Boolean(contestData?.joinedByMe) || Boolean(participation?.joined));
         setCurrentUserRank(
           Array.isArray(rankingData)
@@ -203,6 +205,7 @@ function ContestDetail() {
   const topRanking = ranking.slice(0, 3);
   const ruleText = contest.rule ?? "";
   const participantCount = contest.participantsCount ?? contest.participants ?? 0;
+  const canFinalize = currentUser?.role === "admin";
 
   return (
     <main className="contest-detail-page">
@@ -501,7 +504,7 @@ function ContestDetail() {
             )}
           </section>
 
-          {isFinished && (
+          {isFinished && canFinalize && (
             <section className="contest-detail-card contest-finalize-card">
               <h2>大会結果</h2>
               <button type="button" onClick={handleFinalize}>

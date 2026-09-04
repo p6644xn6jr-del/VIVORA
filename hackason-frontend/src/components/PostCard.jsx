@@ -272,7 +272,7 @@ export default function PostCard({ tag, userId, sortMode, type, tournamentId }) 
                       borderColor: "#d4af37",
                     }}
                   >
-                    #{tournamentNames[String(post.contestId)] ?? "大会"}
+                    {tournamentNames[String(post.contestId)] ?? "大会投稿"}
                   </button>
                 </div>
               ) : post.tags.length > 0 ? (
