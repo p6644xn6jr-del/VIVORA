@@ -434,9 +434,11 @@ function ContestDetail() {
 
               <div>
                 <strong>
-                  {isParticipating || isFinished
-                    ? "参加済み"
-                    : "まだ参加していません"}
+                  {isFinished
+                    ? "閲覧専用"
+                    : isParticipating
+                      ? "参加済み"
+                      : "まだ参加していません"}
                 </strong>
 
                 <p>
@@ -452,7 +454,9 @@ function ContestDetail() {
                 </p>
               </div>
 
-              <span className="contest-detail-chevron">›</span>
+              {!isFinished && (
+                <span className="contest-detail-chevron">›</span>
+              )}
             </div>
           </section>
 

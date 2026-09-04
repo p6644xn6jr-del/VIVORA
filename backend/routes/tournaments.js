@@ -2,7 +2,11 @@ const express = require("express");
 const { createClient } = require("@supabase/supabase-js");
 const authenticateUser = require("../middleware/auth");
 const { buildRanking, formatScore } = require("../utils/ranking");
-const { getTournamentStatus } = require("../utils/tournamentStatus");
+const {
+  getTournamentClosedMessage,
+  getTournamentStatus,
+  isTournamentClosed,
+} = require("../utils/tournamentStatus");
 const { buildTitleAwardRows, selectTitleWinners } = require("../utils/titleAwards");
 const { canFinalizeTournament } = require("../utils/admin");
 const { buildResultSummary } = require("../utils/resultSummary");
@@ -448,6 +452,15 @@ router.post("/:id/participants", authenticateUser, async (req, res) => {
   if (!Number.isInteger(tournamentId)) {
     return res.status(400).json({
       message: "大会IDが不正です"
+    });
+  }
+
+  const tournament = await getTournamentOr404(tournamentId, res);
+  if (!tournament) return;
+
+  if (isTournamentClosed(tournament)) {
+    return res.status(409).json({
+      message: getTournamentClosedMessage(tournament)
     });
   }
 

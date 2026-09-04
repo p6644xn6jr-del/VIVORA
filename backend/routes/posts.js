@@ -11,6 +11,10 @@ const supabase = createClient(
 );
 
 const authenticateUser = require("../middleware/auth");
+const {
+  getTournamentClosedMessage,
+  isTournamentClosed,
+} = require("../utils/tournamentStatus");
 
 async function countPostComments(postId) {
   const { count } = await supabase
@@ -125,6 +129,12 @@ router.post("/", authenticateUser, async (req, res) => {
     }
 
     tournament = tournamentData;
+
+    if (isTournamentClosed(tournament)) {
+      return res.status(409).json({
+        message: getTournamentClosedMessage(tournament)
+      });
+    }
 
     if (
       (tournament.evaluation_type ?? "objective") === "objective" &&

@@ -1,6 +1,10 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { getTournamentStatus } = require("../utils/tournamentStatus");
+const {
+  getTournamentClosedMessage,
+  getTournamentStatus,
+  isTournamentClosed,
+} = require("../utils/tournamentStatus");
 
 const now = new Date("2026-09-04T00:00:00.000Z").getTime();
 
@@ -41,4 +45,41 @@ test("returns finished after end_at", () => {
     ),
     "finished"
   );
+});
+
+test("active tournament accepts new participation and submissions", () => {
+  assert.equal(
+    isTournamentClosed(
+      {
+        start_at: "2026-09-01T00:00:00.000Z",
+        end_at: "2026-09-10T00:00:00.000Z",
+        result_finalized_at: null,
+      },
+      now
+    ),
+    false
+  );
+});
+
+test("finished tournament blocks join, post, and record creation", () => {
+  const tournament = {
+    start_at: "2026-09-01T00:00:00.000Z",
+    end_at: "2026-09-03T00:00:00.000Z",
+    result_finalized_at: null,
+  };
+
+  assert.equal(isTournamentClosed(tournament, now), true);
+  assert.match(getTournamentClosedMessage(tournament, now), /終了済み/);
+});
+
+test("finalized tournament blocks join, post, and record creation", () => {
+  const tournament = {
+    start_at: "2026-09-01T00:00:00.000Z",
+    end_at: "2026-09-10T00:00:00.000Z",
+    result_finalized_at: "2026-09-02T00:00:00.000Z",
+  };
+
+  assert.equal(isTournamentClosed(tournament, now), true);
+  assert.equal(getTournamentStatus(tournament, now), "finished");
+  assert.match(getTournamentClosedMessage(tournament, now), /結果確定済み/);
 });

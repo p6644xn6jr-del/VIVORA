@@ -72,7 +72,9 @@ function Post() {
   useEffect(() => {
     getContests()
       .then((data) => {
-        const activeContests = Array.isArray(data) ? data : [];
+        const activeContests = (Array.isArray(data) ? data : []).filter(
+          (contest) => contest.status === "active" && !contest.resultFinalizedAt
+        );
 
         setContests(activeContests);
 
@@ -259,6 +261,18 @@ function Post() {
 
       if (postType === "大会" && !selectedContest) {
         window.alert("投稿する大会を1つ選択してください。");
+        releaseSubmitLock();
+        return;
+      }
+
+      if (
+        postType === "大会" &&
+        (
+          selectedContest?.status === "finished" ||
+          selectedContest?.resultFinalizedAt
+        )
+      ) {
+        window.alert("終了済みの大会には投稿できません。");
         releaseSubmitLock();
         return;
       }
@@ -463,6 +477,8 @@ function Post() {
   const mainMedia = media[0];
   const extraMedia = media.slice(1);
   const selectedEvaluationType = selectedContest?.evaluationType ?? "objective";
+  const selectedContestClosed =
+    selectedContest?.status === "finished" || Boolean(selectedContest?.resultFinalizedAt);
   const recordStep =
     selectedContest?.decimalPlaces > 0
       ? `0.${"0".repeat(selectedContest.decimalPlaces - 1)}1`
@@ -823,11 +839,24 @@ function Post() {
                 </span>
               </button>
             ))}
+            {contests.length === 0 && (
+              <p className="post-contest-empty">
+                現在投稿できる開催中の大会はありません。
+              </p>
+            )}
           </div>
         </section>
       )}
 
-      {postType === "大会" && selectedContest && selectedEvaluationType === "objective" && (
+      {postType === "大会" && selectedContestClosed && (
+        <section className="post-option-section post-record-section">
+          <p className="post-ai-evaluation-note">
+            この大会は終了済みのため、投稿できません。
+          </p>
+        </section>
+      )}
+
+      {postType === "大会" && selectedContest && !selectedContestClosed && selectedEvaluationType === "objective" && (
         <section className="post-option-section post-record-section">
           <div className="post-section-heading">
             <h2>記録を入力</h2>
@@ -854,7 +883,7 @@ function Post() {
         </section>
       )}
 
-      {postType === "大会" && selectedContest && selectedEvaluationType === "ai" && (
+      {postType === "大会" && selectedContest && !selectedContestClosed && selectedEvaluationType === "ai" && (
         <section className="post-option-section post-record-section">
           <div className="post-section-heading">
             <h2>AI評価</h2>

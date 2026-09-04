@@ -1,6 +1,10 @@
 const express = require("express");
 const { createClient } = require("@supabase/supabase-js");
 const authenticateUser = require("../middleware/auth");
+const {
+  getTournamentClosedMessage,
+  isTournamentClosed,
+} = require("../utils/tournamentStatus");
 
 require("dotenv").config();
 
@@ -23,6 +27,29 @@ router.post("/", authenticateUser, async (req, res) => {
 
   if (!Number.isFinite(numericScore)) {
     return res.status(400).json({ message: "記録を数値で入力してください" });
+  }
+
+  const { data: tournament, error: tournamentError } = await supabase
+    .from("tournaments")
+    .select("*")
+    .eq("id", tournament_id)
+    .maybeSingle();
+
+  if (tournamentError) {
+    return res.status(500).json({
+      message: "大会情報の取得に失敗しました",
+      error: tournamentError.message,
+    });
+  }
+
+  if (!tournament) {
+    return res.status(404).json({ message: "大会が見つかりません" });
+  }
+
+  if (isTournamentClosed(tournament)) {
+    return res.status(409).json({
+      message: getTournamentClosedMessage(tournament),
+    });
   }
 
   const { data, error } = await supabase

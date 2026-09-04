@@ -3,6 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 const API_BASE_URL = "http://localhost:3000";
 
 function getContestStatus(contest) {
+  if (contest?.resultFinalizedAt || contest?.result_finalized_at) {
+    return "finished";
+  }
+
   const start = contest?.startAt ?? contest?.start_at;
   const end = contest?.endAt ?? contest?.end_at;
 
