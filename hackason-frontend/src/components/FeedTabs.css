@@ -1,0 +1,122 @@
+.feed {
+  margin: 22px 20px 20px;
+}
+
+.feed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.feed-header h2 {
+  margin: 0;
+  color: #222;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.feed-more {
+  flex: 0 0 auto;
+  border: 1px solid #e5dcff;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #f8f5ff;
+  color: #7a4dff;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.feed-more:hover {
+  background: #efe9ff;
+}
+
+.home-popular-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-popular-tag {
+  display: grid;
+  grid-template-columns: 22px 40px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 62px;
+  padding: 9px 12px;
+  border: 1px solid #ece9f2;
+  border-radius: 16px;
+  background: #fff;
+  color: inherit;
+  text-align: left;
+  box-shadow: 0 6px 18px rgba(34, 24, 58, 0.05);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.home-popular-tag:hover {
+  transform: translateY(-1px);
+  border-color: #ddd2ff;
+  box-shadow: 0 9px 22px rgba(34, 24, 58, 0.08);
+}
+
+.home-popular-rank {
+  color: #7a4dff;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.home-popular-emoji {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #f1edff;
+  font-size: 20px;
+}
+
+.home-popular-info {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.home-popular-info strong {
+  overflow: hidden;
+  color: #222;
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-popular-info small {
+  color: #999;
+  font-size: 9px;
+}
+
+.home-popular-arrow {
+  color: #999;
+  font-size: 20px;
+  line-height: 1;
+  text-align: center;
+}
+
+.popular-tags-empty {
+  padding: 18px 12px;
+  border: 1px dashed #ddd8e7;
+  border-radius: 14px;
+  background: #fff;
+  color: #888;
+  font-size: 11px;
+  text-align: center;
+}

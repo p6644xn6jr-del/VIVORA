@@ -1,0 +1,35 @@
+.app {
+  min-height: 100vh;
+  background-color: #FAF9F7;
+}
+
+.home {
+  min-height: 100vh;
+  background-color: #FAF9F7;
+  padding-bottom: 90px;
+}
+
+.simple-page {
+  min-height: 100vh;
+  padding: 32px 20px 110px;
+  background-color: #FAF9F7;
+}
+
+.simple-page__eyebrow {
+  margin: 0 0 4px;
+  color: #7A4DFF;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.simple-page h1 {
+  margin: 0 0 8px;
+  color: #111;
+  font-size: 28px;
+}
+
+.simple-page p:last-child {
+  margin: 0;
+  color: #666;
+}

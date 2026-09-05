@@ -1,0 +1,238 @@
+/* 投稿カード */
+
+.posts {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+}
+
+.post-card {
+  overflow: hidden;
+  border: 1px solid #ece9f2;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(34, 24, 58, 0.06);
+  cursor: pointer;
+}
+
+.post-card:focus-visible {
+  outline: 2px solid #7a4dff;
+  outline-offset: 3px;
+}
+
+/* ユーザー部分 */
+.post-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 15px 10px;
+}
+
+.post-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #f1edff;
+  color: #7a4dff;
+  font-size: 20px;
+}
+
+.post-user h3 {
+  margin: 0;
+  color: #222;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.post-user span {
+  display: block;
+  margin-top: 3px;
+  color: #999;
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.post-menu {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #999;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.post-menu:hover {
+  background: #f7f5fa;
+}
+
+.post-content {
+  padding: 0 15px 14px;
+}
+
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.post-tag-button {
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: #f2edff;
+  color: #7046ef;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.post-tag-button:hover {
+  background: #e9e1ff;
+}
+
+.post-card h4 {
+  margin: 0;
+  color: #222;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.65;
+}
+
+.post-tournament-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.post-tournament-stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #eee8d2;
+  border-radius: 12px;
+  background: #fffcf3;
+}
+
+.post-tournament-stat span {
+  color: #8a8068;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.post-tournament-stat strong {
+  color: #3b3527;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.post-tournament-stat--score strong {
+  color: #b8860b;
+}
+
+.post-tournament-stat--rank strong {
+  color: #7a4dff;
+}
+
+.post-image {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  background: #f5f3f7;
+}
+
+.post-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.post-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #e7e4ec;
+  border-radius: 999px;
+  background: #fff;
+  color: #555;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.post-action:hover {
+  background: #faf8ff;
+  border-color: #d9cffc;
+}
+
+.post-action:active {
+  transform: scale(0.97);
+}
+
+.post-action.liked {
+  border-color: #efcfe0;
+  background: #fff3f8;
+  color: #d44f8b;
+}
+
+.contest-empty {
+  padding: 24px 16px;
+  border: 1px dashed #ddd8e7;
+  border-radius: 16px;
+  background: #fff;
+  color: #888;
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (min-width: 700px) {
+  .posts {
+    max-width: 680px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+}

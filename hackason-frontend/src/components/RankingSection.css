@@ -1,0 +1,42 @@
+.ranking-section {
+  margin: 18px 0;
+  padding: 0 16px;
+}
+
+.ranking-section__header h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.ranking-section__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ranking-section__row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 0 14px;
+  border: 1px solid #e9e7ed;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.ranking-section__rank {
+  font-weight: 800;
+  color: #7a4dff;
+}
+
+.ranking-section__name {
+  font-size: 13px;
+  color: #111;
+}
+
+.ranking-section__score {
+  font-size: 13px;
+}

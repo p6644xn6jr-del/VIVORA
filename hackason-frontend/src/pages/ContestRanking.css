@@ -1,0 +1,149 @@
+.contest-ranking-page {
+  min-height: 100vh;
+  padding: 0 16px 90px;
+  background: #f7f6fa;
+}
+
+.contest-ranking-header {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0 18px;
+}
+
+.contest-ranking-header > button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.contest-ranking-header h1 {
+  margin: 0;
+  font-size: 20px;
+  text-align: center;
+}
+
+.contest-ranking-header p {
+  margin: 4px 0 0;
+  color: #777;
+  font-size: 11px;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.contest-ranking-header__spacer {
+  width: 40px;
+}
+
+.contest-ranking-card {
+  overflow: hidden;
+  border: 1px solid #eceaf1;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+.contest-ranking-message {
+  margin: 0;
+  padding: 48px 20px;
+  color: #777;
+  font-size: 12px;
+  text-align: center;
+}
+
+.contest-ranking-page-row {
+  display: grid;
+  grid-template-columns: 34px 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 68px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+
+.contest-ranking-page-row:last-child {
+  border-bottom: 0;
+}
+
+.contest-ranking-page-row img,
+.contest-ranking-page-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.contest-ranking-page-avatar {
+  display: grid;
+  place-items: center;
+  background: #f0ebff;
+  color: #a38be8;
+}
+
+.contest-ranking-page-rank {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #eee;
+  color: #555;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.contest-ranking-page-rank.rank-1 {
+  background: #ffe0a0;
+  color: #9d6a00;
+}
+
+.contest-ranking-page-rank.rank-2 {
+  background: #e8e8e8;
+  color: #666;
+}
+
+.contest-ranking-page-rank.rank-3 {
+  background: #ffd7ad;
+  color: #a46100;
+}
+
+.contest-ranking-page-user {
+  min-width: 0;
+}
+
+.contest-ranking-page-user strong,
+.contest-ranking-page-user span {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.contest-ranking-page-user strong {
+  font-size: 13px;
+}
+
+.contest-ranking-page-user span {
+  margin-top: 3px;
+  color: #999;
+  font-size: 9px;
+}
+
+.contest-ranking-page-score {
+  font-size: 12px;
+  color: #444;
+  white-space: nowrap;
+}
+
+@media (min-width: 700px) {
+  .contest-ranking-page {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+}
