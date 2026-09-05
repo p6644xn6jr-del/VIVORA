@@ -329,10 +329,18 @@ async function handleAiEvaluation(post, record, existingEvaluation = null) {
     }
   } catch (error) {
     console.error("AI provider evaluation failed:", {
-      code: error?.code ?? "AI_PROVIDER_ERROR",
-      message: error?.message,
-      provider: provider.name,
-    });
+  code: error?.code ?? "AI_PROVIDER_ERROR",
+  message: error?.message,
+  provider: provider.name,
+  cause: error?.cause
+    ? {
+        status: error.cause?.status ?? null,
+        code: error.cause?.code ?? null,
+        type: error.cause?.type ?? null,
+        message: error.cause?.message ?? null,
+      }
+    : null,
+});
 
     finalEvaluation = toFailedEvaluation({
       tournament: post.tournaments,
