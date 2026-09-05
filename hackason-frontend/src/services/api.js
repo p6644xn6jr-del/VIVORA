@@ -214,6 +214,7 @@ function normalizeEvaluation(evaluation) {
     criteria: evaluation?.criteria ?? "",
     errorCode: evaluation?.errorCode ?? evaluation?.error_code ?? "",
     errorMessage: evaluation?.errorMessage ?? evaluation?.error_message ?? "",
+    metadata: evaluation?.metadata ?? {},
     evaluatedAt: evaluation?.evaluatedAt ?? evaluation?.evaluated_at ?? null,
     createdAt: evaluation?.createdAt ?? evaluation?.created_at ?? null,
   };

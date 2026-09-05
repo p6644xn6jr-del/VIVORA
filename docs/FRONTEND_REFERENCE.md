@@ -374,7 +374,7 @@ Behavior:
 
 ## AI Evaluation Frontend Notes
 
-UIはevaluation stateをrequest/displayできますが、real AI providerは未接続です。
+UIはevaluation stateをrequest/displayできます。BackendにはOpenAI provider接続がありますが、実行には人間がBackend `.env`へ`OPENAI_API_KEY`を設定する必要があります。
 
 API:
 
@@ -392,3 +392,5 @@ records = canonical ranking score
 ```
 
 Ranking UIを`submission_evaluations.score`から作らないでください。
+
+AI評価対象は投稿mediaの先頭image 1枚です。

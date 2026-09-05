@@ -554,6 +554,7 @@ Files:
 - `backend/manual-migrations/002_title_identity_and_tournament_series.sql`
 - `backend/manual-migrations/003_constrain_evaluation_statuses.sql`
 - `backend/manual-migrations/004_admin_role_and_user_grants.sql`
+- `backend/manual-migrations/005_onigiri_openai_rubric.sql`
 
 Purpose:
 
@@ -595,7 +596,7 @@ Files:
 Purpose:
 
 - recordsをin-memory storageから切り離します。
-- AI evaluation stateを追加します。
+- AI evaluation stateを追加し、OpenAI provider結果を`records`へ同期します。
 - lightweight tournament recommendationsを追加します。
 - tournament series foundationを追加します。
 
@@ -606,8 +607,29 @@ Frontend reference value:
 
 Lab-only caution:
 
-- AI providerは未接続です。
+- OpenAI providerはBackend `.env`の`OPENAI_API_KEY`設定後に実行されます。
 - Tournament series UXは未完成です。
+
+### Backend Providers
+
+Files:
+
+- `backend/providers/openaiEvaluationProvider.js`
+- `backend/providers/evaluationProviderResolver.js`
+
+Purpose:
+
+- OpenAI Responses APIを使い、投稿mediaの先頭image 1枚を固定rubricで評価します。
+- provider固有処理を`routes/evaluations.js`へ直書きせず、resolver経由で呼べるようにします。
+- Structured OutputsのJSON schemaで`score`、`feedback`、`breakdown`を受け取ります。
+
+Frontend reference value:
+
+- 中程度です。frontendは直接呼びませんが、AI評価statusとmetadataの意味を理解できます。
+
+Lab-only caution:
+
+- API keyはBackend `.env`だけで扱います。Frontend、Git、logs、docsに値を出さないでください。
 
 ### Backend Utilities
 
@@ -638,6 +660,8 @@ Files:
 
 - `backend/tests/admin.test.js`
 - `backend/tests/evaluation.test.js`
+- `backend/tests/evaluationProviderResolver.test.js`
+- `backend/tests/openaiEvaluationProvider.test.js`
 - `backend/tests/ranking.test.js`
 - `backend/tests/resultSummary.test.js`
 - `backend/tests/titleAwards.test.js`
@@ -645,7 +669,7 @@ Files:
 
 Purpose:
 
-- admin/finalize permission logic、AI evaluation status、ranking directions、title award idempotency、result summary empties、finished/finalized tournament blockingをcoverします。
+- admin/finalize permission logic、AI evaluation status、OpenAI provider mock、ranking directions、title award idempotency、result summary empties、finished/finalized tournament blockingをcoverします。
 
 Frontend reference value:
 
@@ -710,7 +734,7 @@ Lab-only caution:
 - Labでは`submission_evaluations`を追加しました。
 - AI evaluationはprocessとreasoningを保存します。
 - Completed AI scoresは`records`へsyncします。
-- Real AI provider integrationは未完成です。
+- OpenAI providerは実装済みです。実行にはBackend `.env`の`OPENAI_API_KEY`が必要です。
 
 ### Future Foundations
 

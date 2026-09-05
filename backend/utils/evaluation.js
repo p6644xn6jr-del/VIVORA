@@ -35,15 +35,24 @@ function validateEvaluationScore(score, tournament) {
   );
 }
 
-function hasImageMedia(post) {
+function getFirstImageMedia(post) {
   const media = Array.isArray(post?.media) ? post.media : [];
 
-  return media.some((item) => item?.mediaType === "image" && item?.mediaUrl);
+  return media.find((item) => item?.mediaType === "image" && item?.mediaUrl) ?? null;
+}
+
+function hasImageMedia(post) {
+  return Boolean(getFirstImageMedia(post));
+}
+
+function getConfiguredAiProvider(env = process.env) {
+  return env.VIVORA_AI_PROVIDER || null;
 }
 
 function evaluateSubmission({ tournament, post, record }) {
   const evaluationType = normalizeEvaluationType(tournament?.evaluation_type);
-  const provider = tournament?.evaluation_provider ?? "none";
+  const configuredProvider = getConfiguredAiProvider();
+  const provider = configuredProvider ?? tournament?.evaluation_provider ?? "none";
   const version = tournament?.evaluation_version ?? "v1";
 
   if (evaluationType === "objective") {
@@ -88,7 +97,7 @@ function evaluateSubmission({ tournament, post, record }) {
       };
     }
 
-    if (!process.env.VIVORA_AI_PROVIDER) {
+    if (!configuredProvider) {
       return {
         evaluationType,
         status: "failed",
@@ -103,13 +112,13 @@ function evaluateSubmission({ tournament, post, record }) {
 
     return {
       evaluationType,
-      status: "failed",
-      provider: process.env.VIVORA_AI_PROVIDER,
+      status: "processing",
+      provider: configuredProvider,
       version,
       score: null,
       feedback: null,
-      errorCode: "AI_PROVIDER_UNSUPPORTED",
-      errorMessage: "設定済みAI providerの実装がまだありません。",
+      errorCode: null,
+      errorMessage: null,
     };
   }
 
@@ -125,11 +134,66 @@ function evaluateSubmission({ tournament, post, record }) {
   };
 }
 
+function shouldReuseExistingEvaluation(evaluation) {
+  return ["completed", "processing"].includes(evaluation?.status);
+}
+
+function toFailedEvaluation({
+  tournament,
+  post,
+  provider,
+  errorCode,
+  errorMessage,
+  metadata = {},
+}) {
+  return {
+    evaluationType: normalizeEvaluationType(tournament?.evaluation_type),
+    status: "failed",
+    provider: provider ?? tournament?.evaluation_provider ?? "none",
+    version: tournament?.evaluation_version ?? "v1",
+    score: null,
+    feedback: null,
+    errorCode,
+    errorMessage,
+    metadata: {
+      ...metadata,
+      selectedImageMedia: getFirstImageMedia(post),
+    },
+  };
+}
+
+function toCompletedAiEvaluation({ tournament, post, providerResult }) {
+  return {
+    evaluationType: "ai",
+    status: "completed",
+    provider: providerResult.provider,
+    version: tournament?.evaluation_version ?? "v1",
+    score: Number(providerResult.score),
+    feedback: providerResult.feedback,
+    errorCode: null,
+    errorMessage: null,
+    metadata: {
+      model: providerResult.model,
+      breakdown: providerResult.breakdown,
+      responseId: providerResult.responseId,
+      usage: providerResult.usage,
+      selectedImageMedia: getFirstImageMedia(post),
+      evaluationVersion: tournament?.evaluation_version ?? "v1",
+    },
+  };
+}
+
 module.exports = {
   EVALUATION_STATUSES,
   EVALUATION_TYPES,
   evaluateSubmission,
+  getConfiguredAiProvider,
+  getFirstImageMedia,
+  hasImageMedia,
   normalizeEvaluationStatus,
   normalizeEvaluationType,
+  shouldReuseExistingEvaluation,
+  toCompletedAiEvaluation,
+  toFailedEvaluation,
   validateEvaluationScore,
 };

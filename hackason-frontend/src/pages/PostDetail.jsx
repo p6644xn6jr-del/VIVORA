@@ -11,6 +11,17 @@ import {
 } from "../services/api";
 import "./PostDetail.css";
 
+const EVALUATION_STATUS_LABEL = {
+  completed: "AI評価が完了しました",
+  failed: "AI評価に失敗しました",
+  processing: "AI評価中",
+  pending: "AI評価待ち",
+};
+
+function getEvaluationStatusLabel(status) {
+  return EVALUATION_STATUS_LABEL[status] ?? "AI評価待ち";
+}
+
 export default function PostDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -226,7 +237,7 @@ export default function PostDetail() {
         <section className="post-detail-evaluation">
           <div>
             <h2>評価</h2>
-            <span>{evaluation.status}</span>
+            <span>{getEvaluationStatusLabel(evaluation.status)}</span>
           </div>
           <strong>
             {evaluation.score == null ? "評価待ち" : `Score ${evaluation.score}`}
@@ -234,7 +245,7 @@ export default function PostDetail() {
           <p>
             {evaluation.feedback ||
               evaluation.errorMessage ||
-              "評価結果を待っています。"}
+              getEvaluationStatusLabel(evaluation.status)}
           </p>
         </section>
       )}

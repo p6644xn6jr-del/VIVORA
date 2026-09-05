@@ -73,7 +73,14 @@ VITE_SUPABASE_URL
 VITE_SUPABASE_ANON_KEY
 ```
 
-任意のAI provider environmentは、このLabではデフォルト未設定です。
+AI provider environmentは、実OpenAI評価を行う場合だけBackend側に設定します。
+
+```text
+VIVORA_AI_PROVIDER=openai
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-5.6-luna
+OPENAI_TIMEOUT_MS=30000
+```
 
 ## Backend起動
 
@@ -151,7 +158,7 @@ Labで使用するStorage buckets:
 - Post comments、likes、post detail、tag-based discovery。
 - Tournament recommendations。
 - Tournament series foundation。
-- AI evaluation foundation。
+- OpenAI Responses APIを使うAI evaluation provider foundation。
 
 ## Recordsはrankingのcanonical source
 
@@ -172,14 +179,15 @@ ranking used for titles
 
 ## AI Evaluationの状態
 
-LabにはAI evaluation用のschema、route、UI foundationがありますが、実際のexternal AI providerは未接続です。
+LabにはAI evaluation用のschema、route、UI foundationに加えて、OpenAI Responses API provider実装があります。実行には人間がBackend `.env`へ`OPENAI_API_KEY`を設定する必要があります。
 
 現在の挙動:
 
 - Objective evaluationはnumeric recordsから完了できます。
 - AI evaluationにはimage mediaが必要です。
-- provider未設定の場合、fake scoreは生成せず、明示的なerror codeでfailedになります。
-- completed AI evaluationsは、final scoreを`records`へ同期する想定です。
+- AI evaluationは投稿mediaの先頭image 1枚を評価対象にします。
+- providerまたはAPI key未設定の場合、fake scoreは生成せず、明示的なerror codeでfailedになります。
+- completed AI evaluationsは、final scoreを`records`へ同期します。
 
 ## Admin And User
 
@@ -200,7 +208,7 @@ Labのapplication tablesはRLS OFFのため、これは参考実装であり、�
 
 以下はfoundationまたはexperimentであり、完成機能ではありません。
 
-- Real AI provider integration。
+- Production OpenAI運用設計。
 - Production-grade AI evaluation queue/workers。
 - Tournament series product UX。
 - title equip slots、title animations、notification feed、Proseka-style title customizationなどの高度なtitle/badge UX。

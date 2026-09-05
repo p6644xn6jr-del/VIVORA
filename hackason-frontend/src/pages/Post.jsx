@@ -372,7 +372,16 @@ function Post() {
         selectedContest?.id != null
       ) {
         try {
-          await requestPostEvaluation(savedPost.id);
+          const evaluationResult = await requestPostEvaluation(savedPost.id);
+          if (evaluationResult?.evaluation?.status === "failed") {
+            window.alert(
+              "投稿は保存されましたがAI評価に失敗しました。大会詳細で状態を確認できます。"
+            );
+          } else if (evaluationResult?.evaluation?.status === "completed") {
+            window.alert("投稿しました。AI評価が完了しました。");
+          } else {
+            window.alert("投稿しました。AI評価中です。");
+          }
         } catch (evaluationError) {
           console.error("AI評価開始に失敗しました:", evaluationError);
           window.alert(
@@ -382,7 +391,6 @@ function Post() {
           return;
         }
 
-        window.alert("投稿しました。AI評価状態を大会詳細で確認できます。");
         navigate(`/contests/detail/${selectedContest.id}`, {
           replace: true,
           state: {
@@ -893,6 +901,10 @@ function Post() {
           <p className="post-ai-evaluation-note">
             {selectedContest.aiCriteria ||
               "この大会は投稿画像をもとにAI評価を行います。"}
+          </p>
+
+          <p className="post-ai-evaluation-note">
+            AI評価の対象は先頭の画像1枚です。複数追加した場合は、評価したい画像を先頭にしてください。
           </p>
         </section>
       )}

@@ -21,6 +21,17 @@ const STATUS_LABEL = {
   finished: "終了",
 };
 
+const EVALUATION_STATUS_LABEL = {
+  completed: "AI評価が完了しました",
+  failed: "AI評価に失敗しました",
+  processing: "AI評価中",
+  pending: "AI評価待ち",
+};
+
+function getEvaluationStatusLabel(status) {
+  return EVALUATION_STATUS_LABEL[status] ?? "AI評価待ち";
+}
+
 function ContestDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -343,12 +354,12 @@ function ContestDetail() {
                         ? "評価待ち"
                         : `${evaluation.score}${contest.unit || "点"}`}
                     </strong>
-                    <span>{evaluation.status}</span>
+                    <span>{getEvaluationStatusLabel(evaluation.status)}</span>
                   </div>
                   <p>
                     {evaluation.feedback ||
                       evaluation.errorMessage ||
-                      "AI評価の結果を待っています。"}
+                      getEvaluationStatusLabel(evaluation.status)}
                   </p>
                 </article>
               ))}
